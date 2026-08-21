@@ -4,8 +4,8 @@
 
 Build real molecules atom by atom from the full periodic table, have them validated live against PubChem's ~119-million-compound database, then **heat your compounds up** and watch them fire real, balanced textbook reactions in cascading chain combos.
 
-▶️ **Play:** [https://schwill84.github.io/PeriodicScrabble/](https://MartinSchwill84.github.io/PeriodicScrabble_SCS_125_Anniversary/)
-📦 **Repository:** [github.com/Schwill84/PeriodicScrabble](https://github.com/MartinSchwill84/PeriodicScrabble_SCS_125_Anniversary)
+▶️ **Play:** [PeriodicScrabble_SCS_125_Anniversary](https://MartinSchwill84.github.io/PeriodicScrabble_SCS_125_Anniversary/)
+📦 **Repository:** [github.com/MartinSchwill84/PeriodicScrabble_SCS_125_Anniversary](https://github.com/MartinSchwill84/PeriodicScrabble_SCS_125_Anniversary)
 🎓 **Level:** ~12 years and up · no prior chemistry required to start, gymnasium/high-school curriculum to master
 ⚙️ **Install:** none. One self-contained HTML file. No accounts, no tracking, no build step, no dependencies.
 
