@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Periodic Scrabble: Heat It Up! — SCS 125 Years Anniversary Game. Build real molecules from the periodic table, validated live against PubChem.">
+<title>Periodic Scrabble: Heat It Up! — SCS 125 Years</title>
+<style>
+  :root {
+    /* light "paper & wood scrabble board" theme */
+    --bg: #f4eee1;
+    --bg-2: #efe7d4;
+    --panel: #fffdf8;
+    --panel-2: #faf5e9;
+    --line: #e2d8c2;
+    --ink: #37322a;
+    --ink-2: #7a7261;
+    --ink-3: #a89e88;
+    --accent: #1f6f8b;
+    --accent-2: #6a5ea8;
+    --gold: #b98718;
+    --ok: #2e7d4f;
+    --bad: #c0392b;
+    --swiss: #d52b1e;
+    --wood: #8b5e3c;
+    --tile: #fdf9ee;
+    --tile-line: #d9cdb0;
+
+    /* element group palette — soft pastels */
+    --g-alkali:        #f2a29b;
+    --g-alkaline:      #f6c877;
+    --g-transition:    #d4baee;
+    --g-post:          #a9c9ef;
+    --g-metalloid:     #96ddcf;
+    --g-nonmetal:      #a7dfa7;
+    --g-halogen:       #f2df8c;
+    --g-noble:         #f0c4ea;
+    --g-lanthanide:    #f5b3bc;
+    --g-actinide:      #f6c193;
+    --g-unknown:       #d8d2c2;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background:
+      radial-gradient(1100px 600px at 85% -10%, rgba(213,43,30,0.05), transparent 60%),
+      radial-gradient(900px 500px at -10% 25%, rgba(139,94,60,0.07), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.45;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-bottom: 3px solid var(--wood);
+    background: linear-gradient(180deg, #fffdf8, #f8f2e3);
+    position: sticky; top: 0; z-index: 30;
+    box-shadow: 0 2px 12px rgba(80,60,30,0.08);
+  }
+  .brand { display: flex; align-items: center; gap: 0.85rem; }
+  .brand-mark {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--tile), #f3e9d2);
+    border: 2px solid var(--wood);
+    display: grid; place-items: center;
+    font-weight: 800; color: var(--wood);
+    font-size: 1.3rem;
+    box-shadow: 2px 3px 0 rgba(139,94,60,0.35);
+  }
+  h1 { margin: 0; font-size: 1.2rem; letter-spacing: -0.01em; font-weight: 800; color: var(--ink); }
+  h1 .title-accent { color: var(--swiss); }
+  .subtitle { color: var(--ink-2); font-size: 0.78rem; margin-top: 2px; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .swiss-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.22rem 0.6rem;
+    background: rgba(213,43,30,0.07);
+    color: #a8261c;
+    border: 1px solid rgba(213,43,30,0.35);
+    border-radius: 999px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .swiss-cross { width: 12px; height: 12px; background: var(--swiss); position: relative; border-radius: 2px; }
+  .swiss-cross::before, .swiss-cross::after { content: ""; position: absolute; background: #fff; }
+  .swiss-cross::before { top: 50%; left: 20%; right: 20%; height: 20%; transform: translateY(-50%); }
+  .swiss-cross::after { left: 50%; top: 20%; bottom: 20%; width: 20%; transform: translateX(-50%); }
+
+  .chip {
+    display: none;
+    padding: 0.2rem 0.55rem; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700;
+    background: #f1e4c8; color: #8a6d1f; border: 1px solid #dfc98f;
+  }
+  .chip.on { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+  .top-stats { display: flex; gap: 0.5rem; align-items: center; }
+  .top-stat {
+    background: var(--tile);
+    border: 1px solid var(--tile-line);
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    display: flex; flex-direction: column; align-items: flex-end; min-width: 64px;
+    box-shadow: 1px 2px 0 rgba(139,94,60,0.18);
+  }
+  .top-stat .label { font-size: 0.62rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .top-stat .value { font-size: 1.05rem; font-weight: 800; color: var(--accent); }
+
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.25rem 1.25rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 1.1rem;
+  }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+
+  .mode-row { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.7rem; }
+  .modebtn {
+    padding: 0.35rem 0.9rem; border-radius: 999px; border: 1px solid var(--tile-line);
+    background: var(--tile); color: var(--ink-2); font-weight: 700; font-size: 0.78rem; cursor: pointer;
+  }
+  .modebtn.active { background: var(--wood); border-color: var(--wood); color: #fff; }
+  .mode-note { font-size: 0.72rem; color: var(--ink-3); margin-left: 0.3rem; }
+
+  .table-wrap {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 8px 24px -12px rgba(90,70,40,0.25);
+  }
+  .table-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; flex-wrap: wrap; gap: 0.4rem; }
+  .table-head h2 { margin: 0; font-size: 0.88rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.4rem; font-size: 0.63rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 0.28rem; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,0.08); }
+
+  .ptable { display: grid; grid-template-columns: repeat(18, 1fr); gap: 4px; }
+  .cell {
+    aspect-ratio: 1 / 1.05;
+    border-radius: 6px;
+    background: var(--g-unknown);
+    color: #453b2a;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none;
+    border: 1px solid rgba(120,95,55,0.25);
+    box-shadow: 1px 2px 0 rgba(139,94,60,0.16);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.18s ease, opacity 0.18s ease;
+    font-size: 0.65rem;
+  }
+  .cell:hover:not(.depleted) {
+    transform: translateY(-2px) scale(1.03);
+    z-index: 5;
+    box-shadow: 0 6px 14px rgba(90,70,40,0.35);
+  }
+  .cell.pulse { animation: pulse 0.35s ease; }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); box-shadow: 0 0 16px rgba(31,111,139,0.7); }
+    100% { transform: scale(1); }
+  }
+  .cell.hint { animation: hintGlow 1.4s ease-in-out infinite; }
+  @keyframes hintGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(31,111,139,0); }
+    50% { box-shadow: 0 0 0 4px rgba(31,111,139,0.45), 0 0 16px rgba(31,111,139,0.6); }
+  }
+  .cell .num { position: absolute; top: 3px; left: 4px; font-size: 0.55rem; opacity: 0.65; font-weight: 600; }
+  .cell .sym { font-size: 1rem; font-weight: 800; line-height: 1; }
+  .cell .stk {
+    position: absolute; bottom: 2px; right: 3px;
+    font-size: 0.55rem; font-weight: 700;
+    color: #4a3f28;
+    background: rgba(255,253,245,0.85);
+    padding: 0 4px; border-radius: 99px; min-width: 14px; text-align: center;
+    border: 1px solid rgba(120,95,55,0.2);
+  }
+  .cell.depleted {
+    background: #e8e2d3 !important;
+    color: #b6ac96;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+    box-shadow: none;
+  }
+  .cell.depleted .stk { display: none; }
+  .empty { visibility: hidden; }
+
+  .g-alkali      { background: var(--g-alkali); }
+  .g-alkaline    { background: var(--g-alkaline); }
+  .g-transition  { background: var(--g-transition); }
+  .g-post        { background: var(--g-post); }
+  .g-metalloid   { background: var(--g-metalloid); }
+  .g-nonmetal    { background: var(--g-nonmetal); }
+  .g-halogen     { background: var(--g-halogen); }
+  .g-noble       { background: var(--g-noble); }
+  .g-lanthanide  { background: var(--g-lanthanide); }
+  .g-actinide    { background: var(--g-actinide); }
+
+  .vessel-wrap {
+    margin-top: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    box-shadow: 0 8px 24px -12px rgba(90,70,40,0.25);
+  }
+  .vessel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.55rem; }
+  .vessel-head h3 { margin: 0; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2); }
+  .vessel-tally { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: var(--accent); font-weight: 700; }
+  .vessel {
+    min-height: 58px;
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    padding: 0.6rem;
+    background: var(--bg-2);
+    border-radius: 10px;
+    border: 1px dashed rgba(120,95,55,0.3);
+  }
+  .atom {
+    background: var(--tile);
+    color: var(--ink);
+    padding: 0.25rem 0.65rem;
+    border-radius: 8px;
+    font-weight: 800; font-size: 0.85rem;
+    cursor: pointer;
+    animation: popIn 0.25s cubic-bezier(0.18,0.89,0.32,1.27);
+    border: 1px solid var(--tile-line);
+    box-shadow: 1px 2px 0 rgba(139,94,60,0.25);
+  }
+  .atom:hover { filter: brightness(0.96); transform: translateY(-1px); }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .vessel-empty { color: var(--ink-3); font-size: 0.85rem; font-style: italic; width: 100%; text-align: center; padding-top: 0.4rem; }
+  .api-status { font-size: 0.72rem; color: var(--accent); display: none; align-items: center; gap: 0.35rem; margin-top: 0.45rem; }
+  .api-status.on { display: flex; }
+  .bubble { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--accent); border-top-color: transparent; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .controls { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; }
+  button {
+    border: none; cursor: pointer;
+    padding: 0.62rem 1rem;
+    border-radius: 8px;
+    font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;
+    transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
+    color: #fff;
+  }
+  button:hover { filter: brightness(1.07); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.55; cursor: wait; }
+  .btn-primary { background: linear-gradient(135deg, #359463, var(--ok)); flex: 1; min-width: 140px; box-shadow: 0 5px 14px -6px rgba(46,125,79,0.6); }
+  .btn-secondary { background: #efe6d2; color: var(--ink); border: 1px solid var(--tile-line); }
+  .btn-secondary:hover { background: #e9dec5; }
+  .btn-warning { background: #b06a17; }
+  .btn-danger  { background: var(--bad); }
+
+  /* compound shelf — scrabble-tile stones */
+  .shelf-wrap {
+    margin-top: 1rem;
+    background: linear-gradient(180deg, #f2e7ce, #ecdfc0);
+    border: 1px solid var(--tile-line);
+    border-radius: 14px;
+    padding: 0.9rem 1.15rem;
+    box-shadow: inset 0 2px 8px rgba(120,95,55,0.15);
+  }
+  .shelf-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .shelf-head h3 { margin: 0; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em; color: #7c6a4a; }
+  .shelf { min-height: 56px; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start; }
+  .stone {
+    position: relative;
+    background: linear-gradient(180deg, var(--tile), #f6efdc);
+    border: 1px solid var(--tile-line);
+    border-radius: 9px;
+    padding: 0.42rem 0.7rem 0.34rem;
+    min-width: 62px; text-align: center;
+    box-shadow: 2px 3px 0 rgba(139,94,60,0.3);
+    animation: popIn 0.3s cubic-bezier(0.18,0.89,0.32,1.27);
+    cursor: default;
+  }
+  .stone .stf { font-weight: 800; font-size: 0.95rem; color: var(--ink); line-height: 1.1; }
+  .stone .stn { font-size: 0.58rem; color: var(--ink-2); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stone .stc {
+    position: absolute; top: -7px; right: -7px;
+    background: var(--wood); color: #fff;
+    font-size: 0.6rem; font-weight: 800;
+    border-radius: 999px; padding: 1px 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .stone.cls-salt      { border-bottom: 3px solid #7fa8d9; }
+  .stone.cls-oxide     { border-bottom: 3px solid #c0774a; }
+  .stone.cls-acid      { border-bottom: 3px solid #d9a53f; }
+  .stone.cls-base      { border-bottom: 3px solid #7f5bb0; }
+  .stone.cls-organic   { border-bottom: 3px solid #5f9e60; }
+  .stone.cls-gas       { border-bottom: 3px solid #82c3d4; }
+  .stone.cls-bio       { border-bottom: 3px solid #d97ba2; }
+  .stone.cls-drug      { border-bottom: 3px solid #b06ac4; }
+  .stone.cls-complex   { border-bottom: 3px solid #4557a8; }
+  .stone.cls-energetic { border-bottom: 3px solid #cc4747; }
+  .stone.cls-mineral   { border-bottom: 3px solid #8d8d76; }
+  .stone.cls-element   { border-bottom: 3px solid #9aa2ab; }
+  .shelf-empty { color: #a08d68; font-size: 0.8rem; font-style: italic; padding-top: 0.5rem; }
+
+  /* sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 8px 24px -14px rgba(90,70,40,0.25);
+  }
+  .card h3 {
+    margin: 0 0 0.6rem 0;
+    font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2);
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  }
+  .stat-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.22rem 0; }
+  .stat-row .k { color: var(--ink-2); }
+  .stat-row .v { font-weight: 700; }
+  .big-score {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--wood), var(--swiss));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    line-height: 1;
+  }
+  .lb-tabs { display: flex; gap: 0.3rem; }
+  .tabbtn { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.65rem; background: #efe6d2; color: var(--ink-2); border: 1px solid var(--tile-line); }
+  .tabbtn.active { background: var(--wood); color: #fff; border-color: var(--wood); }
+  .lb-row {
+    display: grid; grid-template-columns: 22px 1fr auto; gap: 0.5rem; align-items: center;
+    padding: 0.35rem 0; border-bottom: 1px solid rgba(120,95,55,0.1);
+    font-size: 0.8rem;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { color: var(--gold); font-weight: 800; text-align: center; }
+  .lb-name { color: var(--ink); }
+  .lb-name small { color: var(--ink-3); display: block; font-size: 0.66rem; }
+  .lb-score { font-weight: 800; color: var(--accent); }
+
+  .discovery {
+    font-size: 0.78rem; color: var(--ink-2);
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(120,95,55,0.08);
+    display: flex; justify-content: space-between; gap: 0.5rem;
+  }
+  .discovery:last-child { border: none; }
+  .discovery .nm { color: var(--ink); font-weight: 600; }
+  .discovery .pt { color: var(--ok); font-weight: 700; }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(60,48,30,0.5);
+    backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 1rem;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: linear-gradient(180deg, #fffdf8, #f8f1e0);
+    border: 1px solid var(--tile-line);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 560px; width: 100%;
+    text-align: center;
+    box-shadow: 0 30px 60px -20px rgba(60,45,25,0.5);
+    animation: modalIn 0.35s ease-out;
+  }
+  @keyframes modalIn { from { transform: translateY(20px) scale(0.96); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+  .modal.shake { animation: shake 0.45s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-12px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(4px); }
+  }
+  .modal h2 { margin: 0 0 0.3rem; font-size: 1.55rem; color: var(--ok); }
+  .modal h2.fail { color: var(--bad); }
+  .modal .name-tag { color: var(--ink-2); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .modal .formula {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 1.7rem;
+    margin: 0.55rem 0 0.9rem;
+    color: var(--accent);
+    font-weight: 700; line-height: 1.2;
+  }
+  .modal .fact { color: var(--ink-2); font-size: 0.93rem; margin-bottom: 0.9rem; }
+  .modal .mw { color: var(--ink-3); font-size: 0.78rem; margin-bottom: 0.9rem; }
+  .modal .points-display {
+    background: rgba(46,125,79,0.1);
+    border: 1px solid rgba(46,125,79,0.35);
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 1.12rem; font-weight: 800; color: var(--ok);
+    display: inline-block; margin-bottom: 1rem;
+  }
+  .modal .points-display.fail { background: rgba(192,57,43,0.08); border-color: rgba(192,57,43,0.3); color: var(--bad); }
+  .modal .flair {
+    display: inline-block;
+    background: rgba(31,111,139,0.08);
+    border: 1px solid rgba(31,111,139,0.3);
+    color: var(--accent);
+    font-size: 0.75rem; font-weight: 700;
+    padding: 0.25rem 0.7rem; border-radius: 999px; margin-bottom: 0.8rem;
+  }
+  .modal .breakdown { font-size: 0.73rem; color: var(--ink-3); margin-bottom: 1rem; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .modal input {
+    background: #fff; border: 1px solid var(--tile-line); color: var(--ink);
+    padding: 0.6rem 0.85rem; border-radius: 8px; font-size: 1rem; width: 80%;
+    text-align: center; margin-bottom: 1rem; font-weight: 600;
+  }
+  .modal input:focus { outline: 2px solid var(--accent); }
+
+  /* Heat Up reaction layer */
+  .heat-bar { margin-top: 0.9rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .btn-heat {
+    background: linear-gradient(135deg, #e8892b, #c0392b);
+    color: #fff; font-size: 0.95rem; padding: 0.7rem 1.3rem;
+    box-shadow: 0 6px 16px -6px rgba(192,57,43,0.6);
+    display: inline-flex; align-items: center; gap: 0.45rem;
+  }
+  .btn-heat .flame { display: inline-block; animation: flick 0.7s ease-in-out infinite alternate; }
+  @keyframes flick { from { transform: scale(1) rotate(-4deg); } to { transform: scale(1.14) rotate(5deg); } }
+  .btn-heat.ready { animation: heatReady 1.3s ease-in-out infinite; }
+  @keyframes heatReady { 0%,100%{ box-shadow:0 6px 16px -6px rgba(192,57,43,0.6);} 50%{ box-shadow:0 6px 26px 0 rgba(232,137,43,0.85);} }
+  .heat-note { font-size: 0.74rem; color: var(--ink-3); }
+  .stone.reactable { animation: shimmer 1.2s ease-in-out infinite; border-color: #e8892b; }
+  .stone.reactable::after {
+    content: "🔥"; position: absolute; top: -9px; left: -7px; font-size: 0.7rem;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+  }
+  @keyframes shimmer {
+    0%,100%{ box-shadow: 2px 3px 0 rgba(139,94,60,0.3), 0 0 6px 0 rgba(232,137,43,0.45); }
+    50%{ box-shadow: 2px 3px 0 rgba(139,94,60,0.3), 0 0 18px 4px rgba(232,137,43,0.85); }
+  }
+  .heat-note b { color: var(--ink-2); }
+  .have-ok { color: var(--ok); font-weight: 700; }
+  .have-miss { color: var(--bad); font-weight: 700; }
+  .stone.combust { animation: combust 1.4s ease forwards; }
+  @keyframes combust {
+    0%{ transform: scale(1); filter:none; }
+    40%{ transform: scale(1.15) translateY(-4px); filter: brightness(1.5) saturate(1.4); box-shadow:0 0 24px 6px rgba(232,137,43,0.9); }
+    100%{ transform: scale(0.2); opacity: 0; }
+  }
+  .heat-haze { position: fixed; inset: 0; pointer-events: none; z-index: 150; background: radial-gradient(circle at 40% 60%, rgba(232,137,43,0.18), transparent 55%); opacity: 0; }
+  .heat-haze.on { animation: haze 1.5s ease; }
+  @keyframes haze { 0%{opacity:0;} 40%{opacity:1;} 100%{opacity:0;} }
+  .modal .equation {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 1.35rem; font-weight: 700; color: var(--wood);
+    background: rgba(184,135,24,0.08); border: 1px solid rgba(184,135,24,0.3);
+    border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0.5rem 0 0.9rem; line-height: 1.5;
+  }
+  .modal .rxn-type { display:inline-block; font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:999px; margin:0 0.2rem 0.5rem; background:rgba(31,111,139,0.1); color:var(--accent); border:1px solid rgba(31,111,139,0.3);}
+  .modal .rxn-type.exo { background:rgba(192,57,43,0.1); color:var(--bad); border-color:rgba(192,57,43,0.3);}
+  .combo-flag { display:inline-block; font-weight:800; color:var(--swiss); font-size:1.05rem; margin-bottom:0.5rem; }
+  /* Reaction compendium */
+  .rxn-card { display:flex; justify-content:space-between; gap:0.5rem; font-size:0.78rem; padding:0.28rem 0; border-bottom:1px solid rgba(120,95,55,0.08); }
+  .rxn-card:last-child{ border:none; }
+  .rxn-card .done{ color:var(--ok); font-weight:800; }
+  .rxn-card .todo{ color:var(--ink-3); }
+  /* Challenge cards */
+  .chal { background:linear-gradient(180deg,#fffdf8,#faf3e4); border:1px solid var(--tile-line); border-radius:10px; padding:0.55rem 0.7rem; margin-bottom:0.5rem; font-size:0.8rem; }
+  .chal.done { border-color:var(--ok); background:linear-gradient(180deg,#f2fbf5,#eaf7ee); }
+  .chal .goal{ font-weight:700; color:var(--ink); }
+  .chal .desc{ font-size:0.72rem; color:var(--ink-2); }
+  .chal .badge{ float:right; font-weight:800; color:var(--ink-3); }
+  .chal.done .badge{ color:var(--ok); }
+
+  .confetti { position: fixed; pointer-events: none; inset: 0; z-index: 200; overflow: hidden; }
+  .confetti i { position: absolute; top: -10px; width: 8px; height: 14px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: 0.3; } }
+
+  footer { text-align: center; padding: 1rem 1.5rem 1.6rem; color: var(--ink-3); font-size: 0.72rem; max-width: 900px; margin: 0 auto; }
+  footer a { color: var(--ink-2); }
+  .disclaimer { margin-top: 0.4rem; font-size: 0.68rem; color: #b3a88f; }
+
+  @media (max-width: 700px) {
+    header { padding: 0.8rem 1rem; flex-wrap: wrap; }
+    h1 { font-size: 1rem; }
+    main { padding: 1rem; }
+    .ptable { gap: 2px; }
+    .cell .sym { font-size: 0.7rem; }
+    .cell .num, .cell .stk { font-size: 0.45rem; }
+    .top-stats { width: 100%; justify-content: flex-end; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">⚗</div>
+    <div>
+      <h1>Periodic Scrabble: <span class="title-accent">Heat It Up!</span></h1>
+      <div class="subtitle">
+        <span class="swiss-badge"><span class="swiss-cross"></span>125 Years — Swiss Chemical Society 1901–2026</span>
+        <span class="chip" id="offlineChip">📦 offline registry mode</span>
+      </div>
+    </div>
+  </div>
+  <div class="top-stats">
+    <div class="top-stat"><span class="label">Score</span><span class="value" id="hScore">0</span></div>
+    <div class="top-stat"><span class="label">Synth.</span><span class="value" id="hCount">0</span></div>
+    <div class="top-stat"><span class="label">Best</span><span class="value" id="hBest">0</span></div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="mode-row">
+      <button class="modebtn active" id="modeFree" onclick="setMode('free')">🧪 Free Play</button>
+      <button class="modebtn" id="modeDaily" onclick="setMode('daily')">📅 Daily Lab</button>
+      <span class="mode-note" id="modeNote">Free Play — full stockroom, play at your own pace.</span>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <h2>The Lab — pick atoms (number = stock remaining)</h2>
+        <div class="legend">
+          <span><i style="background:var(--g-alkali)"></i>Alkali</span>
+          <span><i style="background:var(--g-alkaline)"></i>Alkaline</span>
+          <span><i style="background:var(--g-transition)"></i>Transition</span>
+          <span><i style="background:var(--g-post)"></i>Post-trans.</span>
+          <span><i style="background:var(--g-metalloid)"></i>Metalloid</span>
+          <span><i style="background:var(--g-nonmetal)"></i>Nonmetal</span>
+          <span><i style="background:var(--g-halogen)"></i>Halogen</span>
+          <span><i style="background:var(--g-noble)"></i>Noble</span>
+          <span><i style="background:var(--g-lanthanide)"></i>Lanth.</span>
+          <span><i style="background:var(--g-actinide)"></i>Actin.</span>
+        </div>
+      </div>
+      <div class="ptable" id="ptable"></div>
+    </div>
+
+    <div class="vessel-wrap">
+      <div class="vessel-head">
+        <h3>Reaction Vessel</h3>
+        <div class="vessel-tally" id="tally">empty</div>
+      </div>
+      <div class="vessel" id="vessel">
+        <div class="vessel-empty">Tap elements above to start a synthesis…</div>
+      </div>
+      <div class="api-status" id="apiStatus"><span class="bubble"></span> consulting PubChem (119 M compounds)…</div>
+      <div class="controls">
+        <button class="btn-primary" id="btnSynth" onclick="synthesize()">⚡ Synthesize</button>
+        <button class="btn-secondary" onclick="clearVessel()">Clear</button>
+        <button class="btn-secondary" onclick="hint()">💡 Hint (−50)</button>
+        <button class="btn-warning" onclick="endRun()">🏁 End Run</button>
+        <button class="btn-danger" onclick="newGame(true)">↻ New Game</button>
+      </div>
+    </div>
+
+    <div class="shelf-wrap">
+      <div class="shelf-head">
+        <h3 id="shelfTitle">Compound Shelf — your synthesized collection</h3>
+        <div style="font-size:0.72rem;color:#8a7550;font-weight:700;" id="shelfTally"></div>
+      </div>
+      <div class="shelf" id="shelf">
+        <div class="shelf-empty">Synthesized compounds appear here as collectible stones.</div>
+      </div>
+      <div class="heat-bar">
+        <button class="btn-heat" id="btnHeat" onclick="heatUp()"><span class="flame">🔥</span> Heat It Up!</button>
+        <span class="heat-note" id="heatNote">Synthesize reactant stones (e.g. 1× CH₄ + 2× O₂), then apply heat to trigger a real reaction.</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="card">
+      <h3>Run Stats <span id="runBadge" title="🌐 = all checks online-verified · 📦 = offline registry only">🌐</span></h3>
+      <div class="big-score" id="sScore">0</div>
+      <div style="font-size:0.75rem;color:var(--ink-3);margin-top:2px;">total score this run</div>
+      <div style="margin-top:0.8rem;">
+        <div class="stat-row"><span class="k">Syntheses</span><span class="v" id="sCount">0</span></div>
+        <div class="stat-row"><span class="k">Best molecule</span><span class="v" id="sBest">—</span></div>
+        <div class="stat-row"><span class="k">Atoms remaining</span><span class="v" id="sRemaining">—</span></div>
+        <div class="stat-row"><span class="k">Beyond-registry finds</span><span class="v" id="sApi">0</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Discoveries this run <span style="color:var(--ink-3);font-weight:500;" id="dCount">(0)</span></h3>
+      <div id="discoveries" style="max-height:190px;overflow:auto;">
+        <div style="color:var(--ink-3);font-size:0.78rem;">No syntheses yet. Try water (H+H+O).</div>
+      </div>
+      <div style="margin-top:0.55rem;font-size:0.7rem;color:var(--ink-3);" id="compendiumLine"></div>
+    </div>
+    <div class="card">
+      <h3>Challenge Cards 🎓 <span style="color:var(--ink-3);font-weight:500;" id="chalCount"></span></h3>
+      <div id="challenges"></div>
+      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.74rem;color:var(--ink-2);margin-top:0.4rem;">
+        <input type="checkbox" id="sandboxToggle" onchange="toggleSandbox()"> Sandbox mode (unlimited stock, no penalties — for teaching)
+      </label>
+    </div>
+
+    <div class="card">
+      <h3>Reaction Compendium 🔬 <span style="color:var(--ink-3);font-weight:500;" id="rxnCompCount"></span></h3>
+      <div id="rxnCompendium" style="max-height:180px;overflow:auto;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Leaderboard 🏆
+        <span class="lb-tabs">
+          <button class="tabbtn active" id="lbTabFree" onclick="setLbTab('free')">Free</button>
+          <button class="tabbtn" id="lbTabDaily" onclick="setLbTab('daily')">Daily</button>
+          <button class="tabbtn" onclick="clearLeaderboard()" title="reset leaderboard">reset</button>
+        </span>
+      </h3>
+      <div id="leaderboard">
+        <div style="color:var(--ink-3);font-size:0.78rem;">No scores yet. Finish a run!</div>
+      </div>
+    </div>
+
+    <div class="card" style="font-size:0.78rem;color:var(--ink-2);">
+      <h3>How to play</h3>
+      <p style="margin:0 0 0.4rem;"><b>1. Synthesize</b> compounds (validated by the built-in registry or <b>PubChem live</b>). They land on your <b>shelf</b> as stones.</p>
+      <p style="margin:0 0 0.4rem;"><b>2.</b> Gather <b>every reactant in the right amount</b> — e.g. one <b>CH₄</b> stone + <b>two O₂</b> stones (synthesize O₂ twice = 3 stones total). The status line under the 🔥 button counts what you still need.</p>
+      <p style="margin:0 0 0.4rem;"><b>3. 🔥 Heat It Up!</b> The engine finds a real balanced reaction among your stones, consumes the reactants and mints the <b>products</b> — for a big reaction bonus.</p>
+      <p style="margin:0;">Products can react again → <span style="color:var(--swiss);font-weight:700;">cascade combos</span>. Shimmering stones can react now. A heat press with no reaction fizzles (−10).</p>
+    </div>
+  </aside>
+</main>
+
+<!-- Result modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<footer>
+  Built for the <a href="https://scg.ch/scg-news/game-competition26" target="_blank" rel="noopener">SCS Anniversary Game Competition</a> — celebrating 125 years of the Swiss Chemical Society.
+  Compound validation: local registry + live <a href="https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest" target="_blank" rel="noopener">PubChem PUG-REST</a>. No accounts, no tracking, one file.
+  <div class="disclaimer">Author: Martin Schwill · Built with Claude (Fable 5, Anthropic). Chemistry content is AI-assembled and <b>not human-validated</b> — for education and entertainment, not laboratory guidance. Compound data © PubChem/NIH.</div>
+</footer>
+
+<script>
+/* ============================================================
+   PERIODIC SCRABBLE — Heat It Up! (FINAL competition build)
+   Self-contained. No libraries. Local registry + live PubChem.
+   This build includes the 2026-08 QA-audit fixes (see
+   REVIEW_PeriodicScrabble_HeatItUp.md next to this file).
+============================================================ */
+
+/* ---- ELEMENTS: grid pos, group, scoring weight, stock, atomic mass ---- */
+const ELEMENTS = [
+  {n:1,s:"H",name:"Hydrogen",r:1,c:1,g:"nonmetal",w:1,stock:90,m:1.008},
+  {n:2,s:"He",name:"Helium",r:1,c:18,g:"noble",w:3,stock:4,m:4.003},
+  {n:3,s:"Li",name:"Lithium",r:2,c:1,g:"alkali",w:3,stock:16,m:6.94},
+  {n:4,s:"Be",name:"Beryllium",r:2,c:2,g:"alkaline",w:4,stock:6,m:9.012},
+  {n:5,s:"B",name:"Boron",r:2,c:13,g:"metalloid",w:3,stock:12,m:10.81},
+  {n:6,s:"C",name:"Carbon",r:2,c:14,g:"nonmetal",w:1,stock:90,m:12.011},
+  {n:7,s:"N",name:"Nitrogen",r:2,c:15,g:"nonmetal",w:1,stock:60,m:14.007},
+  {n:8,s:"O",name:"Oxygen",r:2,c:16,g:"nonmetal",w:1,stock:80,m:15.999},
+  {n:9,s:"F",name:"Fluorine",r:2,c:17,g:"halogen",w:2,stock:18,m:18.998},
+  {n:10,s:"Ne",name:"Neon",r:2,c:18,g:"noble",w:3,stock:4,m:20.18},
+  {n:11,s:"Na",name:"Sodium",r:3,c:1,g:"alkali",w:2,stock:28,m:22.99},
+  {n:12,s:"Mg",name:"Magnesium",r:3,c:2,g:"alkaline",w:2,stock:20,m:24.305},
+  {n:13,s:"Al",name:"Aluminium",r:3,c:13,g:"post",w:2,stock:18,m:26.982},
+  {n:14,s:"Si",name:"Silicon",r:3,c:14,g:"metalloid",w:2,stock:14,m:28.085},
+  {n:15,s:"P",name:"Phosphorus",r:3,c:15,g:"nonmetal",w:2,stock:18,m:30.974},
+  {n:16,s:"S",name:"Sulfur",r:3,c:16,g:"nonmetal",w:2,stock:24,m:32.06},
+  {n:17,s:"Cl",name:"Chlorine",r:3,c:17,g:"halogen",w:2,stock:24,m:35.45},
+  {n:18,s:"Ar",name:"Argon",r:3,c:18,g:"noble",w:3,stock:3,m:39.948},
+  {n:19,s:"K",name:"Potassium",r:4,c:1,g:"alkali",w:2,stock:20,m:39.098},
+  {n:20,s:"Ca",name:"Calcium",r:4,c:2,g:"alkaline",w:2,stock:20,m:40.078},
+  {n:21,s:"Sc",name:"Scandium",r:4,c:3,g:"transition",w:6,stock:4,m:44.956},
+  {n:22,s:"Ti",name:"Titanium",r:4,c:4,g:"transition",w:4,stock:8,m:47.867},
+  {n:23,s:"V",name:"Vanadium",r:4,c:5,g:"transition",w:5,stock:6,m:50.942},
+  {n:24,s:"Cr",name:"Chromium",r:4,c:6,g:"transition",w:5,stock:8,m:51.996},
+  {n:25,s:"Mn",name:"Manganese",r:4,c:7,g:"transition",w:4,stock:8,m:54.938},
+  {n:26,s:"Fe",name:"Iron",r:4,c:8,g:"transition",w:3,stock:16,m:55.845},
+  {n:27,s:"Co",name:"Cobalt",r:4,c:9,g:"transition",w:5,stock:6,m:58.933},
+  {n:28,s:"Ni",name:"Nickel",r:4,c:10,g:"transition",w:5,stock:6,m:58.693},
+  {n:29,s:"Cu",name:"Copper",r:4,c:11,g:"transition",w:3,stock:12,m:63.546},
+  {n:30,s:"Zn",name:"Zinc",r:4,c:12,g:"transition",w:3,stock:10,m:65.38},
+  {n:31,s:"Ga",name:"Gallium",r:4,c:13,g:"post",w:6,stock:4,m:69.723},
+  {n:32,s:"Ge",name:"Germanium",r:4,c:14,g:"metalloid",w:6,stock:4,m:72.63},
+  {n:33,s:"As",name:"Arsenic",r:4,c:15,g:"metalloid",w:5,stock:6,m:74.922},
+  {n:34,s:"Se",name:"Selenium",r:4,c:16,g:"nonmetal",w:5,stock:6,m:78.971},
+  {n:35,s:"Br",name:"Bromine",r:4,c:17,g:"halogen",w:3,stock:12,m:79.904},
+  {n:36,s:"Kr",name:"Krypton",r:4,c:18,g:"noble",w:6,stock:2,m:83.798},
+  {n:37,s:"Rb",name:"Rubidium",r:5,c:1,g:"alkali",w:6,stock:4,m:85.468},
+  {n:38,s:"Sr",name:"Strontium",r:5,c:2,g:"alkaline",w:6,stock:4,m:87.62},
+  {n:39,s:"Y",name:"Yttrium",r:5,c:3,g:"transition",w:8,stock:3,m:88.906},
+  {n:40,s:"Zr",name:"Zirconium",r:5,c:4,g:"transition",w:8,stock:3,m:91.224},
+  {n:41,s:"Nb",name:"Niobium",r:5,c:5,g:"transition",w:8,stock:3,m:92.906},
+  {n:42,s:"Mo",name:"Molybdenum",r:5,c:6,g:"transition",w:8,stock:3,m:95.95},
+  {n:43,s:"Tc",name:"Technetium",r:5,c:7,g:"transition",w:12,stock:1,m:98},
+  {n:44,s:"Ru",name:"Ruthenium",r:5,c:8,g:"transition",w:10,stock:2,m:101.07},
+  {n:45,s:"Rh",name:"Rhodium",r:5,c:9,g:"transition",w:10,stock:2,m:102.906},
+  {n:46,s:"Pd",name:"Palladium",r:5,c:10,g:"transition",w:8,stock:3,m:106.42},
+  {n:47,s:"Ag",name:"Silver",r:5,c:11,g:"transition",w:6,stock:6,m:107.868},
+  {n:48,s:"Cd",name:"Cadmium",r:5,c:12,g:"transition",w:8,stock:3,m:112.414},
+  {n:49,s:"In",name:"Indium",r:5,c:13,g:"post",w:8,stock:2,m:114.818},
+  {n:50,s:"Sn",name:"Tin",r:5,c:14,g:"post",w:6,stock:5,m:118.71},
+  {n:51,s:"Sb",name:"Antimony",r:5,c:15,g:"metalloid",w:8,stock:3,m:121.76},
+  {n:52,s:"Te",name:"Tellurium",r:5,c:16,g:"metalloid",w:8,stock:2,m:127.6},
+  {n:53,s:"I",name:"Iodine",r:5,c:17,g:"halogen",w:5,stock:8,m:126.904},
+  {n:54,s:"Xe",name:"Xenon",r:5,c:18,g:"noble",w:10,stock:2,m:131.293},
+  {n:55,s:"Cs",name:"Cesium",r:6,c:1,g:"alkali",w:8,stock:2,m:132.905},
+  {n:56,s:"Ba",name:"Barium",r:6,c:2,g:"alkaline",w:6,stock:4,m:137.327},
+  {n:57,s:"La",name:"Lanthanum",r:6,c:3,g:"lanthanide",w:8,stock:2,m:138.905},
+  {n:72,s:"Hf",name:"Hafnium",r:6,c:4,g:"transition",w:10,stock:2,m:178.49},
+  {n:73,s:"Ta",name:"Tantalum",r:6,c:5,g:"transition",w:10,stock:2,m:180.948},
+  {n:74,s:"W",name:"Tungsten",r:6,c:6,g:"transition",w:8,stock:3,m:183.84},
+  {n:75,s:"Re",name:"Rhenium",r:6,c:7,g:"transition",w:12,stock:1,m:186.207},
+  {n:76,s:"Os",name:"Osmium",r:6,c:8,g:"transition",w:12,stock:1,m:190.23},
+  {n:77,s:"Ir",name:"Iridium",r:6,c:9,g:"transition",w:12,stock:1,m:192.217},
+  {n:78,s:"Pt",name:"Platinum",r:6,c:10,g:"transition",w:10,stock:3,m:195.084},
+  {n:79,s:"Au",name:"Gold",r:6,c:11,g:"transition",w:10,stock:3,m:196.967},
+  {n:80,s:"Hg",name:"Mercury",r:6,c:12,g:"transition",w:10,stock:2,m:200.592},
+  {n:81,s:"Tl",name:"Thallium",r:6,c:13,g:"post",w:12,stock:1,m:204.38},
+  {n:82,s:"Pb",name:"Lead",r:6,c:14,g:"post",w:8,stock:3,m:207.2},
+  {n:83,s:"Bi",name:"Bismuth",r:6,c:15,g:"post",w:10,stock:2,m:208.98},
+  {n:84,s:"Po",name:"Polonium",r:6,c:16,g:"metalloid",w:15,stock:1,m:209},
+  {n:85,s:"At",name:"Astatine",r:6,c:17,g:"halogen",w:15,stock:1,m:210},
+  {n:86,s:"Rn",name:"Radon",r:6,c:18,g:"noble",w:12,stock:1,m:222},
+  {n:87,s:"Fr",name:"Francium",r:7,c:1,g:"alkali",w:15,stock:1,m:223},
+  {n:88,s:"Ra",name:"Radium",r:7,c:2,g:"alkaline",w:12,stock:1,m:226},
+  {n:89,s:"Ac",name:"Actinium",r:7,c:3,g:"actinide",w:12,stock:1,m:227},
+  {n:104,s:"Rf",name:"Rutherfordium",r:7,c:4,g:"transition",w:20,stock:1,m:267},
+  {n:105,s:"Db",name:"Dubnium",r:7,c:5,g:"transition",w:20,stock:1,m:268},
+  {n:106,s:"Sg",name:"Seaborgium",r:7,c:6,g:"transition",w:20,stock:1,m:269},
+  {n:107,s:"Bh",name:"Bohrium",r:7,c:7,g:"transition",w:20,stock:1,m:270},
+  {n:108,s:"Hs",name:"Hassium",r:7,c:8,g:"transition",w:20,stock:1,m:269},
+  {n:109,s:"Mt",name:"Meitnerium",r:7,c:9,g:"transition",w:20,stock:1,m:278},
+  {n:110,s:"Ds",name:"Darmstadtium",r:7,c:10,g:"transition",w:20,stock:1,m:281},
+  {n:111,s:"Rg",name:"Roentgenium",r:7,c:11,g:"transition",w:20,stock:1,m:282},
+  {n:112,s:"Cn",name:"Copernicium",r:7,c:12,g:"transition",w:20,stock:1,m:285},
+  {n:113,s:"Nh",name:"Nihonium",r:7,c:13,g:"post",w:20,stock:1,m:286},
+  {n:114,s:"Fl",name:"Flerovium",r:7,c:14,g:"post",w:20,stock:1,m:289},
+  {n:115,s:"Mc",name:"Moscovium",r:7,c:15,g:"post",w:20,stock:1,m:290},
+  {n:116,s:"Lv",name:"Livermorium",r:7,c:16,g:"post",w:20,stock:1,m:293},
+  {n:117,s:"Ts",name:"Tennessine",r:7,c:17,g:"halogen",w:20,stock:1,m:294},
+  {n:118,s:"Og",name:"Oganesson",r:7,c:18,g:"noble",w:20,stock:1,m:294},
+  {n:58,s:"Ce",name:"Cerium",r:9,c:4,g:"lanthanide",w:8,stock:2,m:140.116},
+  {n:59,s:"Pr",name:"Praseodymium",r:9,c:5,g:"lanthanide",w:10,stock:2,m:140.908},
+  {n:60,s:"Nd",name:"Neodymium",r:9,c:6,g:"lanthanide",w:8,stock:2,m:144.242},
+  {n:61,s:"Pm",name:"Promethium",r:9,c:7,g:"lanthanide",w:15,stock:1,m:145},
+  {n:62,s:"Sm",name:"Samarium",r:9,c:8,g:"lanthanide",w:10,stock:2,m:150.36},
+  {n:63,s:"Eu",name:"Europium",r:9,c:9,g:"lanthanide",w:10,stock:2,m:151.964},
+  {n:64,s:"Gd",name:"Gadolinium",r:9,c:10,g:"lanthanide",w:10,stock:2,m:157.25},
+  {n:65,s:"Tb",name:"Terbium",r:9,c:11,g:"lanthanide",w:12,stock:1,m:158.925},
+  {n:66,s:"Dy",name:"Dysprosium",r:9,c:12,g:"lanthanide",w:12,stock:1,m:162.5},
+  {n:67,s:"Ho",name:"Holmium",r:9,c:13,g:"lanthanide",w:12,stock:1,m:164.930},
+  {n:68,s:"Er",name:"Erbium",r:9,c:14,g:"lanthanide",w:12,stock:1,m:167.259},
+  {n:69,s:"Tm",name:"Thulium",r:9,c:15,g:"lanthanide",w:15,stock:1,m:168.934},
+  {n:70,s:"Yb",name:"Ytterbium",r:9,c:16,g:"lanthanide",w:12,stock:1,m:173.045},
+  {n:71,s:"Lu",name:"Lutetium",r:9,c:17,g:"lanthanide",w:12,stock:1,m:174.967},
+  {n:90,s:"Th",name:"Thorium",r:10,c:4,g:"actinide",w:12,stock:2,m:232.038},
+  {n:91,s:"Pa",name:"Protactinium",r:10,c:5,g:"actinide",w:15,stock:1,m:231.036},
+  {n:92,s:"U",name:"Uranium",r:10,c:6,g:"actinide",w:12,stock:2,m:238.029},
+  {n:93,s:"Np",name:"Neptunium",r:10,c:7,g:"actinide",w:18,stock:1,m:237},
+  {n:94,s:"Pu",name:"Plutonium",r:10,c:8,g:"actinide",w:18,stock:1,m:244},
+  {n:95,s:"Am",name:"Americium",r:10,c:9,g:"actinide",w:18,stock:1,m:243},
+  {n:96,s:"Cm",name:"Curium",r:10,c:10,g:"actinide",w:20,stock:1,m:247},
+  {n:97,s:"Bk",name:"Berkelium",r:10,c:11,g:"actinide",w:20,stock:1,m:247},
+  {n:98,s:"Cf",name:"Californium",r:10,c:12,g:"actinide",w:20,stock:1,m:251},
+  {n:99,s:"Es",name:"Einsteinium",r:10,c:13,g:"actinide",w:20,stock:1,m:252},
+  {n:100,s:"Fm",name:"Fermium",r:10,c:14,g:"actinide",w:20,stock:1,m:257},
+  {n:101,s:"Md",name:"Mendelevium",r:10,c:15,g:"actinide",w:20,stock:1,m:258},
+  {n:102,s:"No",name:"Nobelium",r:10,c:16,g:"actinide",w:20,stock:1,m:259},
+  {n:103,s:"Lr",name:"Lawrencium",r:10,c:17,g:"actinide",w:20,stock:1,m:262},
+];
+const ELEMENT_BY_SYM = Object.fromEntries(ELEMENTS.map(e => [e.s, e]));
+</script>
+<script>
+/* ============================================================
+   LOCAL REGISTRY — curated real compounds (Layer 1).
+   Molecular entries are hand-checked; ionic salts are generated
+   from ion charges so stoichiometry is provably correct.
+============================================================ */
+const REGISTRY = [
+  // ---- Elemental / diatomic / allotropes ----
+  {name:"Dihydrogen",f:"H₂",a:{H:2},cls:"gas",fact:"The lightest, most abundant element in the universe."},
+  {name:"Dioxygen",f:"O₂",a:{O:2},cls:"gas",fact:"Essential for aerobic respiration — and for rusting iron."},
+  {name:"Dinitrogen",f:"N₂",a:{N:2},cls:"gas",fact:"78% of the air, locked behind a very stable triple bond."},
+  {name:"Difluorine",f:"F₂",a:{F:2},cls:"gas",fact:"The most reactive element — attacks glass and even some noble gases."},
+  {name:"Dichlorine",f:"Cl₂",a:{Cl:2},cls:"gas",fact:"Pale-yellow gas used to disinfect drinking water."},
+  {name:"Dibromine",f:"Br₂",a:{Br:2},cls:"element",fact:"One of only two elements liquid at room temperature."},
+  {name:"Diiodine",f:"I₂",a:{I:2},cls:"element",fact:"Sublimes to a violet vapour; tincture is an antiseptic."},
+  {name:"Ozone",f:"O₃",a:{O:3},cls:"gas",fact:"The stratospheric shield against ultraviolet light."},
+  {name:"White phosphorus",f:"P₄",a:{P:4},cls:"element",fact:"Glows in air — the original match-head 'lucifer'."},
+  {name:"Sulfur",f:"S₈",a:{S:8},cls:"element",fact:"Native sulfur crystallises as beautiful yellow 8-atom rings."},
+  // ---- Single-atom element stones (metals, graphite, sulfur) — these unlock
+  //      the classic metal reactions: thermite, Na + water, Zn + acid, … ----
+  {name:"Graphite (carbon)",f:"C",a:{C:1},cls:"element",fact:"A lump of pure carbon — pencil lead, charcoal, and diamond's cheap sibling."},
+  {name:"Sulfur (lump)",f:"S",a:{S:1},cls:"element",fact:"A pinch of brimstone, ready to burn to SO₂."},
+  {name:"Sodium metal",f:"Na",a:{Na:1},cls:"element",fact:"Soft enough to cut with a knife — and famously frisky in water."},
+  {name:"Potassium metal",f:"K",a:{K:1},cls:"element",fact:"Burns lilac; even livelier in water than sodium."},
+  {name:"Magnesium ribbon",f:"Mg",a:{Mg:1},cls:"element",fact:"Burns with a blinding white light — never look directly at it."},
+  {name:"Calcium metal",f:"Ca",a:{Ca:1},cls:"element",fact:"A soft grey metal that fizzes gently in water."},
+  {name:"Aluminium foil",f:"Al",a:{Al:1},cls:"element",fact:"Kitchen foil — and one half of the thermite reaction."},
+  {name:"Zinc granule",f:"Zn",a:{Zn:1},cls:"element",fact:"The classic hydrogen-generator metal of the school lab."},
+  {name:"Iron filings",f:"Fe",a:{Fe:1},cls:"element",fact:"Sprinkle near a magnet — or displace copper from its salt."},
+  {name:"Copper strip",f:"Cu",a:{Cu:1},cls:"element",fact:"The reddish conductor in every wire — nobler than iron and zinc."},
+  // ---- Small inorganic molecules ----
+  {name:"Water",f:"H₂O",a:{H:2,O:1},cls:"oxide",fact:"The solvent of life — the cheapest synthesis on the board."},
+  {name:"Hydrogen peroxide",f:"H₂O₂",a:{H:2,O:2},cls:"oxide",fact:"Disinfectant and hair bleach; decomposes to water and oxygen."},
+  {name:"Carbon monoxide",f:"CO",a:{C:1,O:1},cls:"oxide",fact:"Odourless and lethal — binds haemoglobin 200× tighter than O₂."},
+  {name:"Carbon dioxide",f:"CO₂",a:{C:1,O:2},cls:"oxide",fact:"Plants breathe it in; engines breathe it out."},
+  {name:"Nitric oxide",f:"NO",a:{N:1,O:1},cls:"oxide",fact:"A blood-vessel signalling molecule — Nobel Prize 1998."},
+  {name:"Nitrogen dioxide",f:"NO₂",a:{N:1,O:2},cls:"oxide",fact:"The brown gas of smog and fuming nitric acid."},
+  {name:"Nitrous oxide",f:"N₂O",a:{N:2,O:1},cls:"oxide",fact:"Laughing gas — anaesthetic and whipped-cream propellant."},
+  {name:"Dinitrogen tetroxide",f:"N₂O₄",a:{N:2,O:4},cls:"oxide",fact:"Rocket oxidiser; sits in equilibrium with brown NO₂."},
+  {name:"Sulfur dioxide",f:"SO₂",a:{S:1,O:2},cls:"oxide",fact:"Volcano breath and preservative E220 in dried fruit."},
+  {name:"Sulfur trioxide",f:"SO₃",a:{S:1,O:3},cls:"oxide",fact:"Reacts violently with water — the step before sulfuric acid."},
+  {name:"Ammonia",f:"NH₃",a:{N:1,H:3},cls:"base",fact:"The Haber–Bosch product that feeds half the planet."},
+  {name:"Phosphine",f:"PH₃",a:{P:1,H:3},cls:"gas",fact:"Pyrophoric gas — and a disputed biosignature on Venus."},
+  {name:"Methane",f:"CH₄",a:{C:1,H:4},cls:"organic",fact:"Natural gas; a potent greenhouse molecule; it rains on Titan."},
+  {name:"Silane",f:"SiH₄",a:{Si:1,H:4},cls:"gas",fact:"Silicon's answer to methane — ignites on contact with air."},
+  {name:"Diborane",f:"B₂H₆",a:{B:2,H:6},cls:"gas",fact:"Electron-deficient with banana bonds — rewrote bonding theory."},
+  {name:"Hydrogen fluoride",f:"HF",a:{H:1,F:1},cls:"acid",fact:"Etches glass — never let it touch skin."},
+  {name:"Hydrogen chloride",f:"HCl",a:{H:1,Cl:1},cls:"acid",fact:"Dissolves to hydrochloric acid — lives in your stomach."},
+  {name:"Hydrogen bromide",f:"HBr",a:{H:1,Br:1},cls:"acid",fact:"A stronger acid than HCl; used in fine synthesis."},
+  {name:"Hydrogen iodide",f:"HI",a:{H:1,I:1},cls:"acid",fact:"The strongest common hydrohalic acid."},
+  {name:"Hydrogen sulfide",f:"H₂S",a:{H:2,S:1},cls:"acid",fact:"Rotten-egg gas — the smell of hot springs."},
+  {name:"Hydrogen cyanide",f:"HCN",a:{H:1,C:1,N:1},cls:"acid",fact:"Bitter-almond smell; a key industrial feedstock."},
+  {name:"Carbon disulfide",f:"CS₂",a:{C:1,S:2},cls:"organic",fact:"Volatile solvent once used to make rayon and cellophane."},
+  {name:"Carbonyl sulfide",f:"COS",a:{C:1,O:1,S:1},cls:"gas",fact:"The most abundant sulfur gas in the atmosphere."},
+  {name:"Nitrogen trichloride",f:"NCl₃",a:{N:1,Cl:3},cls:"gas",fact:"Oily yellow explosive — the smell over chlorinated pools."},
+  {name:"Phosphorus trichloride",f:"PCl₃",a:{P:1,Cl:3},cls:"salt",fact:"Fuming liquid — a workhorse chlorinating reagent."},
+  {name:"Phosphorus pentachloride",f:"PCl₅",a:{P:1,Cl:5},cls:"salt",fact:"Converts carboxylic acids to acid chlorides."},
+  {name:"Boron trifluoride",f:"BF₃",a:{B:1,F:3},cls:"gas",fact:"A classic Lewis acid — grabs electron pairs greedily."},
+  {name:"Sulfur hexafluoride",f:"SF₆",a:{S:1,F:6},cls:"gas",fact:"Inert, dense gas — makes your voice comically deep."},
+  {name:"Xenon tetrafluoride",f:"XeF₄",a:{Xe:1,F:4},cls:"salt",fact:"Proof noble gases DO react — square-planar crystals, 1962."},
+  {name:"Tungsten hexafluoride",f:"WF₆",a:{W:1,F:6},cls:"gas",fact:"One of the densest gases — used to lay tungsten in microchips."},
+  {name:"Uranium hexafluoride",f:"UF₆",a:{U:1,F:6},cls:"salt",fact:"The gas that enables uranium enrichment by centrifuge."},
+  // ---- Non-metal oxides & acids ----
+  {name:"Dinitrogen pentoxide",f:"N₂O₅",a:{N:2,O:5},cls:"oxide",fact:"The anhydride of nitric acid — an aggressive nitrating agent."},
+  {name:"Phosphorus pentoxide",f:"P₄O₁₀",a:{P:4,O:10},cls:"oxide",fact:"The most powerful desiccant — pulls water from sulfuric acid."},
+  {name:"Silicon dioxide",f:"SiO₂",a:{Si:1,O:2},cls:"mineral",fact:"Quartz, sand, and the heart of every microchip."},
+  {name:"Carbonic acid",f:"H₂CO₃",a:{H:2,C:1,O:3},cls:"acid",fact:"The fizz in sparkling water and the buffer of your blood."},
+  {name:"Nitric acid",f:"HNO₃",a:{H:1,N:1,O:3},cls:"acid",fact:"Rocket oxidiser; stains proteins yellow."},
+  {name:"Nitrous acid",f:"HNO₂",a:{H:1,N:1,O:2},cls:"acid",fact:"Unstable acid behind diazonium dye chemistry."},
+  {name:"Sulfuric acid",f:"H₂SO₄",a:{H:2,S:1,O:4},cls:"acid",fact:"The most-produced industrial chemical on Earth."},
+  {name:"Sulfurous acid",f:"H₂SO₃",a:{H:2,S:1,O:3},cls:"acid",fact:"The weak acid of dissolved sulfur dioxide."},
+  {name:"Phosphoric acid",f:"H₃PO₄",a:{H:3,P:1,O:4},cls:"acid",fact:"Gives cola its tang; a fertiliser feedstock."},
+  {name:"Perchloric acid",f:"HClO₄",a:{H:1,Cl:1,O:4},cls:"acid",fact:"One of the strongest acids — and a fierce oxidiser."},
+  {name:"Hypochlorous acid",f:"HClO",a:{H:1,Cl:1,O:1},cls:"acid",fact:"The active agent in bleach — and in your immune cells."},
+  {name:"Chloric acid",f:"HClO₃",a:{H:1,Cl:1,O:3},cls:"acid",fact:"Strong oxidising acid, stable only in solution."},
+  {name:"Boric acid",f:"H₃BO₃",a:{H:3,B:1,O:3},cls:"acid",fact:"Mild antiseptic and the flame-green of borax beads."},
+  {name:"Ammonium hydroxide",f:"NH₄OH",a:{N:1,H:5,O:1},cls:"base",fact:"Household 'ammonia' cleaning solution."},
+  {name:"Hydrazine",f:"N₂H₄",a:{N:2,H:4},cls:"base",fact:"Rocket fuel and a powerful reducing agent."},
+  {name:"Hydroxylamine",f:"NH₃O",a:{N:1,H:3,O:1},cls:"base",fact:"Turns ketones into oximes — a nylon precursor."},
+  {name:"Guanidine",f:"CH₅N₃",a:{C:1,H:5,N:3},cls:"organic",fact:"Super-strong organic base found in your urine and in nucleic acids."},
+  {name:"Urea",f:"CH₄N₂O",a:{C:1,H:4,N:2,O:1},cls:"organic",fact:"Wöhler's 1828 synthesis ended the doctrine of vitalism."},
+  {name:"Cyanamide",f:"CH₂N₂",a:{C:1,H:2,N:2},cls:"organic",fact:"Fertiliser precursor — and a plausible prebiotic molecule."},
+  // ---- Metal oxides / hydrides beyond the ionic generator ----
+  {name:"Iron(II,III) oxide (magnetite)",f:"Fe₃O₄",a:{Fe:3,O:4},cls:"mineral",fact:"The only naturally magnetic mineral."},
+  {name:"Dialuminium trioxide (corundum)",f:"Al₂O₃",a:{Al:2,O:3},cls:"mineral",fact:"Sapphire and ruby are both doped corundum."},
+  {name:"Manganese dioxide",f:"MnO₂",a:{Mn:1,O:2},cls:"oxide",fact:"The black powder inside alkaline batteries."},
+  {name:"Titanium dioxide",f:"TiO₂",a:{Ti:1,O:2},cls:"oxide",fact:"The whitest pigment known — paint, sunscreen, Oreo filling."},
+  {name:"Chromium(III) oxide",f:"Cr₂O₃",a:{Cr:2,O:3},cls:"oxide",fact:"Green pigment 'viridian' — and a polishing rouge."},
+  {name:"Vanadium pentoxide",f:"V₂O₅",a:{V:2,O:5},cls:"oxide",fact:"Catalyst in the contact process making sulfuric acid."},
+  {name:"Lead(IV) oxide",f:"PbO₂",a:{Pb:1,O:2},cls:"oxide",fact:"The positive plate in every lead–acid car battery."},
+  {name:"Lead(II,IV) oxide (red lead)",f:"Pb₃O₄",a:{Pb:3,O:4},cls:"oxide",fact:"Bright-red anticorrosion primer of old bridges."},
+  {name:"Tin(IV) oxide",f:"SnO₂",a:{Sn:1,O:2},cls:"oxide",fact:"Transparent conductor in touchscreens as ITO's cousin."},
+  {name:"Copper(I) oxide",f:"Cu₂O",a:{Cu:2,O:1},cls:"oxide",fact:"Red antifouling pigment on ship hulls."},
+  {name:"Silver(I) oxide",f:"Ag₂O",a:{Ag:2,O:1},cls:"oxide",fact:"The cathode in silver-oxide watch batteries."},
+  {name:"Dinitrogen trioxide",f:"N₂O₃",a:{N:2,O:3},cls:"oxide",fact:"Blue liquid — the anhydride of nitrous acid."},
+  {name:"Calcium hydride",f:"CaH₂",a:{Ca:1,H:2},cls:"salt",fact:"A portable hydrogen source and a fierce drying agent."},
+  {name:"Sodium hydride",f:"NaH",a:{Na:1,H:1},cls:"salt",fact:"A strong base that rips protons from carbon."},
+  {name:"Lithium aluminium hydride",f:"LiAlH₄",a:{Li:1,Al:1,H:4},cls:"salt",fact:"The reducing hammer of the organic lab."},
+  {name:"Sodium borohydride",f:"NaBH₄",a:{Na:1,B:1,H:4},cls:"salt",fact:"A gentler reducing agent — reduces aldehydes cleanly."},
+  {name:"Sodium peroxide",f:"Na₂O₂",a:{Na:2,O:2},cls:"oxide",fact:"Yellow solid that releases oxygen — used in submarines."},
+  {name:"Calcium carbide",f:"CaC₂",a:{Ca:1,C:2},cls:"salt",fact:"Add water and it makes acetylene — old miners' lamps."},
+  {name:"Silicon carbide",f:"CSi",a:{C:1,Si:1},cls:"mineral",fact:"Carborundum — nearly as hard as diamond."},
+  // ---- Organics: hydrocarbons ----
+  {name:"Ethane",f:"C₂H₆",a:{C:2,H:6},cls:"organic",fact:"The second-simplest alkane; a petrochemical feedstock."},
+  {name:"Ethylene",f:"C₂H₄",a:{C:2,H:4},cls:"organic",fact:"The world's biggest organic chemical — ripens bananas."},
+  {name:"Acetylene",f:"C₂H₂",a:{C:2,H:2},cls:"organic",fact:"Burns at 3,300 °C in an oxy-acetylene torch."},
+  {name:"Propane",f:"C₃H₈",a:{C:3,H:8},cls:"organic",fact:"Bottled gas for barbecues and campervans."},
+  {name:"Propene",f:"C₃H₆",a:{C:3,H:6},cls:"organic",fact:"The monomer of polypropylene."},
+  {name:"n-Butane",f:"C₄H₁₀",a:{C:4,H:10},cls:"organic",fact:"The fuel in a disposable lighter."},
+  {name:"1,3-Butadiene",f:"C₄H₆",a:{C:4,H:6},cls:"organic",fact:"The building block of synthetic rubber."},
+  {name:"Pentane",f:"C₅H₁₂",a:{C:5,H:12},cls:"organic",fact:"A volatile solvent and blowing agent for foams."},
+  {name:"Hexane",f:"C₆H₁₄",a:{C:6,H:14},cls:"organic",fact:"Extracts oil from soybeans in the food industry."},
+  {name:"Cyclohexane",f:"C₆H₁₂",a:{C:6,H:12},cls:"organic",fact:"Chairs and boats — the textbook conformational playground."},
+  {name:"Benzene",f:"C₆H₆",a:{C:6,H:6},cls:"organic",fact:"Kekulé dreamed its ring as a snake biting its tail."},
+  {name:"Toluene",f:"C₇H₈",a:{C:7,H:8},cls:"organic",fact:"The solvent smell of model glue; precursor to TNT."},
+  {name:"Styrene",f:"C₈H₈",a:{C:8,H:8},cls:"organic",fact:"Polymerises to polystyrene coffee cups."},
+  {name:"Naphthalene",f:"C₁₀H₈",a:{C:10,H:8},cls:"organic",fact:"The smell of old mothballs — two fused benzene rings."},
+  {name:"Octane",f:"C₈H₁₈",a:{C:8,H:18},cls:"organic",fact:"The reference for petrol's octane rating (iso-octane)."},
+  // ---- Organics: functional groups ----
+  {name:"Methanol",f:"CH₄O",a:{C:1,H:4,O:1},cls:"organic",fact:"Wood alcohol — toxic, and a racing-car fuel."},
+  {name:"Ethanol",f:"C₂H₆O",a:{C:2,H:6,O:1},cls:"organic",fact:"The alcohol of every beer, wine and spirit."},
+  {name:"Isopropanol",f:"C₃H₈O",a:{C:3,H:8,O:1},cls:"organic",fact:"Rubbing alcohol and hand-sanitiser base."},
+  {name:"Ethylene glycol",f:"C₂H₆O₂",a:{C:2,H:6,O:2},cls:"organic",fact:"Sweet-tasting antifreeze — and toxic to pets."},
+  {name:"Glycerol",f:"C₃H₈O₃",a:{C:3,H:8,O:3},cls:"organic",fact:"Sweet humectant in soap and cosmetics."},
+  {name:"Formaldehyde",f:"CH₂O",a:{C:1,H:2,O:1},cls:"organic",fact:"Preservative of specimens; the smell of new plywood."},
+  {name:"Acetaldehyde",f:"C₂H₄O",a:{C:2,H:4,O:1},cls:"organic",fact:"The hangover molecule — ethanol's first metabolite."},
+  {name:"Acetone",f:"C₃H₆O",a:{C:3,H:6,O:1},cls:"organic",fact:"Nail-polish remover; a universal lab solvent."},
+  {name:"Formic acid",f:"CH₂O₂",a:{C:1,H:2,O:2},cls:"acid",fact:"The sting of an ant bite."},
+  {name:"Acetic acid",f:"C₂H₄O₂",a:{C:2,H:4,O:2},cls:"acid",fact:"The sour of vinegar — the pKa taught to every student."},
+  {name:"Oxalic acid",f:"C₂H₂O₄",a:{C:2,H:2,O:4},cls:"acid",fact:"In rhubarb leaves; forms kidney stones with calcium."},
+  {name:"Lactic acid",f:"C₃H₆O₃",a:{C:3,H:6,O:3},cls:"acid",fact:"The burn in tired muscles and the tang of yoghurt."},
+  {name:"Propionic acid",f:"C₃H₆O₂",a:{C:3,H:6,O:2},cls:"acid",fact:"Mould inhibitor E280 in bread."},
+  {name:"Citric acid",f:"C₆H₈O₇",a:{C:6,H:8,O:7},cls:"acid",fact:"The zing of citrus and the hub of cellular respiration."},
+  {name:"Malic acid",f:"C₄H₆O₅",a:{C:4,H:6,O:5},cls:"acid",fact:"The tart of green apples."},
+  {name:"Tartaric acid",f:"C₄H₆O₆",a:{C:4,H:6,O:6},cls:"acid",fact:"Pasteur separated its mirror-image crystals by hand — chirality was born."},
+  {name:"Benzoic acid",f:"C₇H₆O₂",a:{C:7,H:6,O:2},cls:"acid",fact:"Food preservative E210."},
+  {name:"Salicylic acid",f:"C₇H₆O₃",a:{C:7,H:6,O:3},cls:"acid",fact:"Willow-bark remedy; the parent of aspirin."},
+  {name:"Diethyl ether",f:"C₄H₁₀O",a:{C:4,H:10,O:1},cls:"organic",fact:"The first surgical anaesthetic, 1846."},
+  {name:"Phenol",f:"C₆H₆O",a:{C:6,H:6,O:1},cls:"organic",fact:"Lister's antiseptic — the first hospital disinfectant."},
+  {name:"Aniline",f:"C₆H₇N",a:{C:6,H:7,N:1},cls:"organic",fact:"The mother of the synthetic-dye industry."},
+  {name:"Pyridine",f:"C₅H₅N",a:{C:5,H:5,N:1},cls:"organic",fact:"Fishy-smelling solvent — benzene with a nitrogen."},
+  {name:"Nitrobenzene",f:"C₆H₅NO₂",a:{C:6,H:5,N:1,O:2},cls:"organic",fact:"Marzipan-scented — the step before aniline."},
+  {name:"Diethylamine",f:"C₄H₁₁N",a:{C:4,H:11,N:1},cls:"organic",fact:"A simple secondary amine, fishy and basic."},
+  {name:"Chloroform",f:"CHCl₃",a:{C:1,H:1,Cl:3},cls:"organic",fact:"Victorian anaesthetic; now a lab solvent."},
+  {name:"Dichloromethane",f:"CH₂Cl₂",a:{C:1,H:2,Cl:2},cls:"organic",fact:"Paint stripper and decaffeination solvent."},
+  {name:"Carbon tetrachloride",f:"CCl₄",a:{C:1,Cl:4},cls:"organic",fact:"Old fire extinguisher fluid — now banned for ozone harm."},
+  {name:"Tetrafluoromethane",f:"CF₄",a:{C:1,F:4},cls:"gas",fact:"A potent, ultra-persistent greenhouse gas."},
+  {name:"Vinyl chloride",f:"C₂H₃Cl",a:{C:2,H:3,Cl:1},cls:"organic",fact:"The monomer of PVC piping."},
+  // ---- Sugars, amino acids, biomolecules ----
+  {name:"Glycine",f:"C₂H₅NO₂",a:{C:2,H:5,N:1,O:2},cls:"bio",fact:"The smallest amino acid — detected on comet 67P."},
+  {name:"Alanine",f:"C₃H₇NO₂",a:{C:3,H:7,N:1,O:2},cls:"bio",fact:"A non-essential amino acid central to muscle metabolism."},
+  {name:"Serine",f:"C₃H₇NO₃",a:{C:3,H:7,N:1,O:3},cls:"bio",fact:"Amino acid with a reactive hydroxyl in enzyme active sites."},
+  {name:"Cysteine",f:"C₃H₇NO₂S",a:{C:3,H:7,N:1,O:2,S:1},cls:"bio",fact:"Its sulfur forms the disulfide bridges that shape proteins."},
+  {name:"Valine",f:"C₅H₁₁NO₂",a:{C:5,H:11,N:1,O:2},cls:"bio",fact:"An essential branched-chain amino acid."},
+  {name:"Glucose",f:"C₆H₁₂O₆",a:{C:6,H:12,O:6},cls:"bio",fact:"Universal cellular fuel and the unit of starch."},
+  {name:"Fructose",f:"C₆H₁₂O₆",a:{C:6,H:12,O:6},cls:"bio",fact:"Fruit sugar — glucose's sweeter structural isomer."},
+  {name:"Ribose",f:"C₅H₁₀O₅",a:{C:5,H:10,O:5},cls:"bio",fact:"The 'R' in RNA — a five-carbon sugar."},
+  {name:"Sucrose",f:"C₁₂H₂₂O₁₁",a:{C:12,H:22,O:11},cls:"bio",fact:"Table sugar — glucose plus fructose."},
+  {name:"Lactose",f:"C₁₂H₂₂O₁₁",a:{C:12,H:22,O:11},cls:"bio",fact:"Milk sugar — some of us can't digest it."},
+  {name:"Cholesterol",f:"C₂₇H₄₆O",a:{C:27,H:46,O:1},cls:"bio",fact:"Vital membrane steroid — and the villain of clogged arteries."},
+  {name:"Adenine",f:"C₅H₅N₅",a:{C:5,H:5,N:5},cls:"bio",fact:"The 'A' base of DNA and the core of ATP."},
+  {name:"Cytosine",f:"C₄H₅N₃O",a:{C:4,H:5,N:3,O:1},cls:"bio",fact:"The 'C' base of DNA."},
+  {name:"Nicotine",f:"C₁₀H₁₄N₂",a:{C:10,H:14,N:2},cls:"bio",fact:"Tobacco's addictive alkaloid — also an insecticide."},
+  {name:"Vitamin C",f:"C₆H₈O₆",a:{C:6,H:8,O:6},cls:"bio",fact:"Ascorbic acid — its synthesis was perfected at Roche, Basel."},
+  // ---- Drugs & alkaloids ----
+  {name:"Caffeine",f:"C₈H₁₀N₄O₂",a:{C:8,H:10,N:4,O:2},cls:"drug",fact:"The world's most-consumed psychoactive molecule."},
+  {name:"Theobromine",f:"C₇H₈N₄O₂",a:{C:7,H:8,N:4,O:2},cls:"drug",fact:"The gentle kick in chocolate — toxic to dogs."},
+  {name:"Aspirin",f:"C₉H₈O₄",a:{C:9,H:8,O:4},cls:"drug",fact:"Acetylsalicylic acid — Bayer, 1899."},
+  {name:"Paracetamol",f:"C₈H₉NO₂",a:{C:8,H:9,N:1,O:2},cls:"drug",fact:"Acetaminophen — the world's most-used analgesic."},
+  {name:"Ibuprofen",f:"C₁₃H₁₈O₂",a:{C:13,H:18,O:2},cls:"drug",fact:"The headache NSAID from Boots, 1961."},
+  {name:"Vanillin",f:"C₈H₈O₃",a:{C:8,H:8,O:3},cls:"drug",fact:"The flavour of vanilla — 99% synthetic today."},
+  {name:"Penicillin G",f:"C₁₆H₁₈N₂O₄S",a:{C:16,H:18,N:2,O:4,S:1},cls:"drug",fact:"Fleming's mould molecule that opened the antibiotic age."},
+  {name:"Diazepam",f:"C₁₆H₁₃ClN₂O",a:{C:16,H:13,Cl:1,N:2,O:1},cls:"drug",fact:"Valium — a benzodiazepine discovered at Roche, Basel."},
+  {name:"LSD",f:"C₂₀H₂₅N₃O",a:{C:20,H:25,N:3,O:1},cls:"drug",fact:"Synthesised by Albert Hofmann at Sandoz, Basel, 1938."},
+  {name:"Morphine",f:"C₁₇H₁₉NO₃",a:{C:17,H:19,N:1,O:3},cls:"drug",fact:"The first alkaloid ever isolated, 1804."},
+  // ---- Energetic ----
+  {name:"TNT",f:"C₇H₅N₃O₆",a:{C:7,H:5,N:3,O:6},cls:"energetic",fact:"Trinitrotoluene — the yardstick for explosive yield."},
+  {name:"Nitroglycerin",f:"C₃H₅N₃O₉",a:{C:3,H:5,N:3,O:9},cls:"energetic",fact:"Nobel tamed it into dynamite — funding the Nobel Prizes."},
+  {name:"RDX",f:"C₃H₆N₆O₆",a:{C:3,H:6,N:6,O:6},cls:"energetic",fact:"The core of C-4 plastic explosive."},
+  {name:"PETN",f:"C₅H₈N₄O₁₂",a:{C:5,H:8,N:4,O:12},cls:"energetic",fact:"A powerful nitrate ester also used in heart medicine."},
+  {name:"Picric acid",f:"C₆H₃N₃O₇",a:{C:6,H:3,N:3,O:7},cls:"energetic",fact:"A yellow dye that turns into an explosive when dry."},
+  // ---- Coordination complexes & Swiss flagships ----
+  {name:"Tetraamminecopper(II)",f:"[Cu(NH₃)₄]²⁺",a:{Cu:1,N:4,H:12},cls:"complex",fact:"Royal-blue ligand-exchange demo — copper's signature."},
+  {name:"Hexaaquacopper(II)",f:"[Cu(H₂O)₆]²⁺",a:{Cu:1,H:12,O:6},cls:"complex",fact:"The pale blue of every aqueous copper salt."},
+  {name:"Tollens' reagent",f:"[Ag(NH₃)₂]⁺",a:{Ag:1,N:2,H:6},cls:"complex",fact:"The silver-mirror test for aldehydes."},
+  {name:"Hexaaquairon(III)",f:"[Fe(H₂O)₆]³⁺",a:{Fe:1,H:12,O:6},cls:"complex",fact:"Pale violet — hydrolyses to rusty yellow."},
+  {name:"Tetrachlorocobaltate(II)",f:"[CoCl₄]²⁻",a:{Co:1,Cl:4},cls:"complex",fact:"The deep blue of humidity-indicator silica gel."},
+  {name:"Potassium ferrocyanide",f:"K₄[Fe(CN)₆]",a:{K:4,Fe:1,C:6,N:6},cls:"complex",fact:"Anti-caking agent — and a Prussian-blue precursor."},
+  {name:"Prussian blue",f:"Fe₄[Fe(CN)₆]₃",a:{Fe:7,C:18,N:18},cls:"complex",fact:"First modern synthetic pigment (1706); a caesium antidote."},
+  {name:"Cisplatin",f:"PtCl₂(NH₃)₂",a:{Pt:1,Cl:2,N:2,H:6},cls:"complex",fact:"Rosenberg's chance discovery — a landmark cancer drug."},
+  {name:"Zeise's salt",f:"K[PtCl₃(C₂H₄)]",a:{K:1,Pt:1,Cl:3,C:2,H:4},cls:"complex",fact:"The first organometallic π-complex (1827)."},
+  {name:"Ferrocene",f:"Fe(C₅H₅)₂",a:{Fe:1,C:10,H:10},cls:"complex",fact:"The sandwich molecule — 1973 Nobel Prize."},
+  {name:"Nickel tetracarbonyl",f:"Ni(CO)₄",a:{Ni:1,C:4,O:4},cls:"complex",fact:"Volatile and deadly — the Mond process purifies nickel through it."},
+  {name:"Iron pentacarbonyl",f:"Fe(CO)₅",a:{Fe:1,C:5,O:5},cls:"complex",fact:"A yellow liquid that makes ultra-pure iron powder."},
+  {name:"Schweizer's reagent",f:"[Cu(NH₃)₄(H₂O)₂](OH)₂",a:{Cu:1,N:4,H:18,O:4},cls:"complex",fact:"Discovered 1857 in Zürich — dissolves cellulose to spin rayon."},
+  {name:"Potassium ferricyanide",f:"K₃[Fe(CN)₆]",a:{K:3,Fe:1,C:6,N:6},cls:"complex",fact:"Ruby-red crystals — the 'blueprint' toning agent."},
+  // ---- Biological showpieces ----
+  {name:"Heme b",f:"C₃₄H₃₂FeN₄O₄",a:{C:34,H:32,Fe:1,N:4,O:4},cls:"bio",fact:"The red of your blood — iron porphyrin that carries O₂."},
+  {name:"Chlorophyll a",f:"C₅₅H₇₂MgN₄O₅",a:{C:55,H:72,Mg:1,N:4,O:5},cls:"bio",fact:"The green of every leaf — magnesium captures sunlight."},
+  {name:"Lithium fluoride",f:"LiF",a:{Li:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Lithium chloride",f:"LiCl",a:{Li:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Lithium bromide",f:"LiBr",a:{Li:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Lithium iodide",f:"LiI",a:{Li:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Lithium oxide",f:"Li₂O",a:{Li:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Lithium sulfide",f:"Li₂S",a:{Li:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Lithium hydroxide",f:"LiOH",a:{Li:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Lithium nitrate",f:"LiNO₃",a:{Li:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Lithium sulfate",f:"Li₂SO₄",a:{Li:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Lithium carbonate",f:"Li₂CO₃",a:{Li:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Lithium phosphate",f:"Li₃PO₄",a:{Li:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Lithium acetate",f:"LiCH₃COO",a:{Li:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Sodium fluoride",f:"NaF",a:{Na:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Sodium chloride",f:"NaCl",a:{Na:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Sodium bromide",f:"NaBr",a:{Na:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Sodium iodide",f:"NaI",a:{Na:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Sodium oxide",f:"Na₂O",a:{Na:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Sodium sulfide",f:"Na₂S",a:{Na:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Sodium hydroxide",f:"NaOH",a:{Na:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Sodium nitrate",f:"NaNO₃",a:{Na:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Sodium sulfate",f:"Na₂SO₄",a:{Na:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Sodium carbonate",f:"Na₂CO₃",a:{Na:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Sodium phosphate",f:"Na₃PO₄",a:{Na:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Sodium acetate",f:"NaCH₃COO",a:{Na:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Potassium fluoride",f:"KF",a:{K:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Potassium chloride",f:"KCl",a:{K:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Potassium bromide",f:"KBr",a:{K:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Potassium iodide",f:"KI",a:{K:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Potassium oxide",f:"K₂O",a:{K:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Potassium sulfide",f:"K₂S",a:{K:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Potassium hydroxide",f:"KOH",a:{K:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Potassium nitrate",f:"KNO₃",a:{K:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Potassium sulfate",f:"K₂SO₄",a:{K:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Potassium carbonate",f:"K₂CO₃",a:{K:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Potassium phosphate",f:"K₃PO₄",a:{K:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Potassium acetate",f:"KCH₃COO",a:{K:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Rubidium fluoride",f:"RbF",a:{Rb:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Rubidium chloride",f:"RbCl",a:{Rb:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Rubidium bromide",f:"RbBr",a:{Rb:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Rubidium iodide",f:"RbI",a:{Rb:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Rubidium oxide",f:"Rb₂O",a:{Rb:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Rubidium sulfide",f:"Rb₂S",a:{Rb:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Rubidium hydroxide",f:"RbOH",a:{Rb:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Rubidium nitrate",f:"RbNO₃",a:{Rb:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Rubidium sulfate",f:"Rb₂SO₄",a:{Rb:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Rubidium carbonate",f:"Rb₂CO₃",a:{Rb:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Rubidium phosphate",f:"Rb₃PO₄",a:{Rb:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Rubidium acetate",f:"RbCH₃COO",a:{Rb:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Cesium fluoride",f:"CsF",a:{Cs:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Cesium chloride",f:"CsCl",a:{Cs:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Cesium bromide",f:"CsBr",a:{Cs:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Cesium iodide",f:"CsI",a:{Cs:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Cesium oxide",f:"Cs₂O",a:{Cs:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Cesium sulfide",f:"Cs₂S",a:{Cs:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Cesium hydroxide",f:"CsOH",a:{Cs:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Cesium nitrate",f:"CsNO₃",a:{Cs:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Cesium sulfate",f:"Cs₂SO₄",a:{Cs:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Cesium carbonate",f:"Cs₂CO₃",a:{Cs:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Cesium phosphate",f:"Cs₃PO₄",a:{Cs:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Cesium acetate",f:"CsCH₃COO",a:{Cs:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Silver fluoride",f:"AgF",a:{Ag:1,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Silver chloride",f:"AgCl",a:{Ag:1,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Silver bromide",f:"AgBr",a:{Ag:1,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Silver iodide",f:"AgI",a:{Ag:1,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Silver oxide",f:"Ag₂O",a:{Ag:2,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Silver sulfide",f:"Ag₂S",a:{Ag:2,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Silver hydroxide",f:"AgOH",a:{Ag:1,O:1,H:1},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Silver nitrate",f:"AgNO₃",a:{Ag:1,N:1,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Silver sulfate",f:"Ag₂SO₄",a:{Ag:2,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Silver carbonate",f:"Ag₂CO₃",a:{Ag:2,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Silver phosphate",f:"Ag₃PO₄",a:{Ag:3,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Silver acetate",f:"AgCH₃COO",a:{Ag:1,C:2,H:3,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Ammonium fluoride",f:"NH₄F",a:{N:1,H:4,F:1},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Ammonium chloride",f:"NH₄Cl",a:{N:1,H:4,Cl:1},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Ammonium bromide",f:"NH₄Br",a:{N:1,H:4,Br:1},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Ammonium iodide",f:"NH₄I",a:{N:1,H:4,I:1},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Ammonium nitrate",f:"NH₄NO₃",a:{N:2,H:4,O:3},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Ammonium sulfate",f:"(NH₄)₂SO₄",a:{N:2,H:8,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Ammonium carbonate",f:"(NH₄)₂CO₃",a:{N:2,H:8,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Ammonium phosphate",f:"(NH₄)₃PO₄",a:{N:3,H:12,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Ammonium acetate",f:"NH₄CH₃COO",a:{N:1,H:7,C:2,O:2},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Magnesium fluoride",f:"MgF₂",a:{Mg:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Magnesium chloride",f:"MgCl₂",a:{Mg:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Magnesium bromide",f:"MgBr₂",a:{Mg:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Magnesium iodide",f:"MgI₂",a:{Mg:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Magnesium oxide",f:"MgO",a:{Mg:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Magnesium sulfide",f:"MgS",a:{Mg:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Magnesium hydroxide",f:"Mg(OH)₂",a:{Mg:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Magnesium nitrate",f:"Mg(NO₃)₂",a:{Mg:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Magnesium sulfate",f:"MgSO₄",a:{Mg:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Magnesium carbonate",f:"MgCO₃",a:{Mg:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Magnesium phosphate",f:"Mg₃(PO₄)₂",a:{Mg:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Magnesium acetate",f:"Mg(CH₃COO)₂",a:{Mg:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Calcium fluoride",f:"CaF₂",a:{Ca:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Calcium chloride",f:"CaCl₂",a:{Ca:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Calcium bromide",f:"CaBr₂",a:{Ca:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Calcium iodide",f:"CaI₂",a:{Ca:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Calcium oxide",f:"CaO",a:{Ca:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Calcium sulfide",f:"CaS",a:{Ca:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Calcium hydroxide",f:"Ca(OH)₂",a:{Ca:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Calcium nitrate",f:"Ca(NO₃)₂",a:{Ca:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Calcium sulfate",f:"CaSO₄",a:{Ca:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Calcium carbonate",f:"CaCO₃",a:{Ca:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Calcium phosphate",f:"Ca₃(PO₄)₂",a:{Ca:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Calcium acetate",f:"Ca(CH₃COO)₂",a:{Ca:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Strontium fluoride",f:"SrF₂",a:{Sr:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Strontium chloride",f:"SrCl₂",a:{Sr:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Strontium bromide",f:"SrBr₂",a:{Sr:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Strontium iodide",f:"SrI₂",a:{Sr:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Strontium oxide",f:"SrO",a:{Sr:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Strontium sulfide",f:"SrS",a:{Sr:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Strontium hydroxide",f:"Sr(OH)₂",a:{Sr:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Strontium nitrate",f:"Sr(NO₃)₂",a:{Sr:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Strontium sulfate",f:"SrSO₄",a:{Sr:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Strontium carbonate",f:"SrCO₃",a:{Sr:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Strontium phosphate",f:"Sr₃(PO₄)₂",a:{Sr:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Strontium acetate",f:"Sr(CH₃COO)₂",a:{Sr:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Barium fluoride",f:"BaF₂",a:{Ba:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Barium chloride",f:"BaCl₂",a:{Ba:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Barium bromide",f:"BaBr₂",a:{Ba:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Barium iodide",f:"BaI₂",a:{Ba:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Barium oxide",f:"BaO",a:{Ba:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Barium sulfide",f:"BaS",a:{Ba:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Barium hydroxide",f:"Ba(OH)₂",a:{Ba:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Barium nitrate",f:"Ba(NO₃)₂",a:{Ba:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Barium sulfate",f:"BaSO₄",a:{Ba:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Barium carbonate",f:"BaCO₃",a:{Ba:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Barium phosphate",f:"Ba₃(PO₄)₂",a:{Ba:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Barium acetate",f:"Ba(CH₃COO)₂",a:{Ba:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Zinc fluoride",f:"ZnF₂",a:{Zn:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Zinc chloride",f:"ZnCl₂",a:{Zn:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Zinc bromide",f:"ZnBr₂",a:{Zn:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Zinc iodide",f:"ZnI₂",a:{Zn:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Zinc oxide",f:"ZnO",a:{Zn:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Zinc sulfide",f:"ZnS",a:{Zn:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Zinc hydroxide",f:"Zn(OH)₂",a:{Zn:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Zinc nitrate",f:"Zn(NO₃)₂",a:{Zn:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Zinc sulfate",f:"ZnSO₄",a:{Zn:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Zinc carbonate",f:"ZnCO₃",a:{Zn:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Zinc phosphate",f:"Zn₃(PO₄)₂",a:{Zn:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Zinc acetate",f:"Zn(CH₃COO)₂",a:{Zn:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Copper(II) fluoride",f:"CuF₂",a:{Cu:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Copper(II) chloride",f:"CuCl₂",a:{Cu:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Copper(II) bromide",f:"CuBr₂",a:{Cu:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Copper(II) iodide",f:"CuI₂",a:{Cu:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Copper(II) oxide",f:"CuO",a:{Cu:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Copper(II) sulfide",f:"CuS",a:{Cu:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Copper(II) hydroxide",f:"Cu(OH)₂",a:{Cu:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Copper(II) nitrate",f:"Cu(NO₃)₂",a:{Cu:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Copper(II) sulfate",f:"CuSO₄",a:{Cu:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Copper(II) carbonate",f:"CuCO₃",a:{Cu:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Copper(II) phosphate",f:"Cu₃(PO₄)₂",a:{Cu:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Copper(II) acetate",f:"Cu(CH₃COO)₂",a:{Cu:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Iron(II) fluoride",f:"FeF₂",a:{Fe:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Iron(II) chloride",f:"FeCl₂",a:{Fe:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Iron(II) bromide",f:"FeBr₂",a:{Fe:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Iron(II) iodide",f:"FeI₂",a:{Fe:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Iron(II) oxide",f:"FeO",a:{Fe:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Iron(II) sulfide",f:"FeS",a:{Fe:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Iron(II) hydroxide",f:"Fe(OH)₂",a:{Fe:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Iron(II) nitrate",f:"Fe(NO₃)₂",a:{Fe:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Iron(II) sulfate",f:"FeSO₄",a:{Fe:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Iron(II) carbonate",f:"FeCO₃",a:{Fe:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Iron(II) phosphate",f:"Fe₃(PO₄)₂",a:{Fe:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Iron(II) acetate",f:"Fe(CH₃COO)₂",a:{Fe:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Iron(III) fluoride",f:"FeF₃",a:{Fe:1,F:3},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Iron(III) chloride",f:"FeCl₃",a:{Fe:1,Cl:3},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Iron(III) bromide",f:"FeBr₃",a:{Fe:1,Br:3},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Iron(III) iodide",f:"FeI₃",a:{Fe:1,I:3},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Iron(III) oxide",f:"Fe₂O₃",a:{Fe:2,O:3},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Iron(III) sulfide",f:"Fe₂S₃",a:{Fe:2,S:3},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Iron(III) hydroxide",f:"Fe(OH)₃",a:{Fe:1,O:3,H:3},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Iron(III) nitrate",f:"Fe(NO₃)₃",a:{Fe:1,N:3,O:9},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Iron(III) sulfate",f:"Fe₂(SO₄)₃",a:{Fe:2,S:3,O:12},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Iron(III) carbonate",f:"Fe₂(CO₃)₃",a:{Fe:2,C:3,O:9},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Iron(III) phosphate",f:"FePO₄",a:{Fe:1,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Iron(III) acetate",f:"Fe(CH₃COO)₃",a:{Fe:1,C:6,H:9,O:6},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Aluminium fluoride",f:"AlF₃",a:{Al:1,F:3},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Aluminium chloride",f:"AlCl₃",a:{Al:1,Cl:3},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Aluminium bromide",f:"AlBr₃",a:{Al:1,Br:3},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Aluminium iodide",f:"AlI₃",a:{Al:1,I:3},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Aluminium oxide",f:"Al₂O₃",a:{Al:2,O:3},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Aluminium sulfide",f:"Al₂S₃",a:{Al:2,S:3},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Aluminium hydroxide",f:"Al(OH)₃",a:{Al:1,O:3,H:3},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Aluminium nitrate",f:"Al(NO₃)₃",a:{Al:1,N:3,O:9},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Aluminium sulfate",f:"Al₂(SO₄)₃",a:{Al:2,S:3,O:12},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Aluminium carbonate",f:"Al₂(CO₃)₃",a:{Al:2,C:3,O:9},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Aluminium phosphate",f:"AlPO₄",a:{Al:1,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Aluminium acetate",f:"Al(CH₃COO)₃",a:{Al:1,C:6,H:9,O:6},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Nickel(II) fluoride",f:"NiF₂",a:{Ni:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Nickel(II) chloride",f:"NiCl₂",a:{Ni:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Nickel(II) bromide",f:"NiBr₂",a:{Ni:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Nickel(II) iodide",f:"NiI₂",a:{Ni:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Nickel(II) oxide",f:"NiO",a:{Ni:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Nickel(II) sulfide",f:"NiS",a:{Ni:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Nickel(II) hydroxide",f:"Ni(OH)₂",a:{Ni:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Nickel(II) nitrate",f:"Ni(NO₃)₂",a:{Ni:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Nickel(II) sulfate",f:"NiSO₄",a:{Ni:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Nickel(II) carbonate",f:"NiCO₃",a:{Ni:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Nickel(II) phosphate",f:"Ni₃(PO₄)₂",a:{Ni:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Nickel(II) acetate",f:"Ni(CH₃COO)₂",a:{Ni:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Cobalt(II) fluoride",f:"CoF₂",a:{Co:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Cobalt(II) chloride",f:"CoCl₂",a:{Co:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Cobalt(II) bromide",f:"CoBr₂",a:{Co:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Cobalt(II) iodide",f:"CoI₂",a:{Co:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Cobalt(II) oxide",f:"CoO",a:{Co:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Cobalt(II) sulfide",f:"CoS",a:{Co:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Cobalt(II) hydroxide",f:"Co(OH)₂",a:{Co:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Cobalt(II) nitrate",f:"Co(NO₃)₂",a:{Co:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Cobalt(II) sulfate",f:"CoSO₄",a:{Co:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Cobalt(II) carbonate",f:"CoCO₃",a:{Co:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Cobalt(II) phosphate",f:"Co₃(PO₄)₂",a:{Co:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Cobalt(II) acetate",f:"Co(CH₃COO)₂",a:{Co:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Manganese(II) fluoride",f:"MnF₂",a:{Mn:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Manganese(II) chloride",f:"MnCl₂",a:{Mn:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Manganese(II) bromide",f:"MnBr₂",a:{Mn:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Manganese(II) iodide",f:"MnI₂",a:{Mn:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Manganese(II) oxide",f:"MnO",a:{Mn:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Manganese(II) sulfide",f:"MnS",a:{Mn:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Manganese(II) hydroxide",f:"Mn(OH)₂",a:{Mn:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Manganese(II) nitrate",f:"Mn(NO₃)₂",a:{Mn:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Manganese(II) sulfate",f:"MnSO₄",a:{Mn:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Manganese(II) carbonate",f:"MnCO₃",a:{Mn:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Manganese(II) phosphate",f:"Mn₃(PO₄)₂",a:{Mn:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Manganese(II) acetate",f:"Mn(CH₃COO)₂",a:{Mn:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Lead(II) fluoride",f:"PbF₂",a:{Pb:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Lead(II) chloride",f:"PbCl₂",a:{Pb:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Lead(II) bromide",f:"PbBr₂",a:{Pb:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Lead(II) iodide",f:"PbI₂",a:{Pb:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Lead(II) oxide",f:"PbO",a:{Pb:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Lead(II) sulfide",f:"PbS",a:{Pb:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Lead(II) hydroxide",f:"Pb(OH)₂",a:{Pb:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Lead(II) nitrate",f:"Pb(NO₃)₂",a:{Pb:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Lead(II) sulfate",f:"PbSO₄",a:{Pb:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Lead(II) carbonate",f:"PbCO₃",a:{Pb:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Lead(II) phosphate",f:"Pb₃(PO₄)₂",a:{Pb:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Lead(II) acetate",f:"Pb(CH₃COO)₂",a:{Pb:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Tin(II) fluoride",f:"SnF₂",a:{Sn:1,F:2},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Tin(II) chloride",f:"SnCl₂",a:{Sn:1,Cl:2},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Tin(II) bromide",f:"SnBr₂",a:{Sn:1,Br:2},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Tin(II) iodide",f:"SnI₂",a:{Sn:1,I:2},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Tin(II) oxide",f:"SnO",a:{Sn:1,O:1},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Tin(II) sulfide",f:"SnS",a:{Sn:1,S:1},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Tin(II) hydroxide",f:"Sn(OH)₂",a:{Sn:1,O:2,H:2},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Tin(II) nitrate",f:"Sn(NO₃)₂",a:{Sn:1,N:2,O:6},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Tin(II) sulfate",f:"SnSO₄",a:{Sn:1,S:1,O:4},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Tin(II) carbonate",f:"SnCO₃",a:{Sn:1,C:1,O:3},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Tin(II) phosphate",f:"Sn₃(PO₄)₂",a:{Sn:3,P:2,O:8},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Tin(II) acetate",f:"Sn(CH₃COO)₂",a:{Sn:1,C:4,H:6,O:4},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Chromium(III) fluoride",f:"CrF₃",a:{Cr:1,F:3},cls:"salt",fact:"A textbook fluoride salt — validated stoichiometry."},
+  {name:"Chromium(III) chloride",f:"CrCl₃",a:{Cr:1,Cl:3},cls:"salt",fact:"A textbook chloride salt — validated stoichiometry."},
+  {name:"Chromium(III) bromide",f:"CrBr₃",a:{Cr:1,Br:3},cls:"salt",fact:"A textbook bromide salt — validated stoichiometry."},
+  {name:"Chromium(III) iodide",f:"CrI₃",a:{Cr:1,I:3},cls:"salt",fact:"A textbook iodide salt — validated stoichiometry."},
+  {name:"Chromium(III) oxide",f:"Cr₂O₃",a:{Cr:2,O:3},cls:"oxide",fact:"A textbook oxide salt — validated stoichiometry."},
+  {name:"Chromium(III) sulfide",f:"Cr₂S₃",a:{Cr:2,S:3},cls:"salt",fact:"A textbook sulfide salt — validated stoichiometry."},
+  {name:"Chromium(III) hydroxide",f:"Cr(OH)₃",a:{Cr:1,O:3,H:3},cls:"base",fact:"A textbook hydroxide salt — validated stoichiometry."},
+  {name:"Chromium(III) nitrate",f:"Cr(NO₃)₃",a:{Cr:1,N:3,O:9},cls:"salt",fact:"A textbook nitrate salt — validated stoichiometry."},
+  {name:"Chromium(III) sulfate",f:"Cr₂(SO₄)₃",a:{Cr:2,S:3,O:12},cls:"salt",fact:"A textbook sulfate salt — validated stoichiometry."},
+  {name:"Chromium(III) carbonate",f:"Cr₂(CO₃)₃",a:{Cr:2,C:3,O:9},cls:"salt",fact:"A textbook carbonate salt — validated stoichiometry."},
+  {name:"Chromium(III) phosphate",f:"CrPO₄",a:{Cr:1,P:1,O:4},cls:"salt",fact:"A textbook phosphate salt — validated stoichiometry."},
+  {name:"Chromium(III) acetate",f:"Cr(CH₃COO)₃",a:{Cr:1,C:6,H:9,O:6},cls:"organic",fact:"A textbook acetate salt — validated stoichiometry."},
+  {name:"Sodium nitrite",f:"NaNO₂",a:{Na:1,N:1,O:2},cls:"salt",fact:"A textbook nitrite salt — validated stoichiometry."},
+  {name:"Potassium nitrite",f:"KNO₂",a:{K:1,N:1,O:2},cls:"salt",fact:"A textbook nitrite salt — validated stoichiometry."},
+  {name:"Calcium nitrite",f:"Ca(NO₂)₂",a:{Ca:1,N:2,O:4},cls:"salt",fact:"A textbook nitrite salt — validated stoichiometry."},
+  {name:"Barium nitrite",f:"Ba(NO₂)₂",a:{Ba:1,N:2,O:4},cls:"salt",fact:"A textbook nitrite salt — validated stoichiometry."},
+  {name:"Silver nitrite",f:"AgNO₂",a:{Ag:1,N:1,O:2},cls:"salt",fact:"A textbook nitrite salt — validated stoichiometry."},
+  {name:"Sodium sulfite",f:"Na₂SO₃",a:{Na:2,S:1,O:3},cls:"salt",fact:"A textbook sulfite salt — validated stoichiometry."},
+  {name:"Potassium sulfite",f:"K₂SO₃",a:{K:2,S:1,O:3},cls:"salt",fact:"A textbook sulfite salt — validated stoichiometry."},
+  {name:"Calcium sulfite",f:"CaSO₃",a:{Ca:1,S:1,O:3},cls:"salt",fact:"A textbook sulfite salt — validated stoichiometry."},
+  {name:"Ammonium sulfite",f:"(NH₄)₂SO₃",a:{N:2,H:8,S:1,O:3},cls:"salt",fact:"A textbook sulfite salt — validated stoichiometry."},
+  {name:"Sodium bicarbonate",f:"NaHCO₃",a:{Na:1,H:1,C:1,O:3},cls:"salt",fact:"A textbook bicarbonate salt — validated stoichiometry."},
+  {name:"Potassium bicarbonate",f:"KHCO₃",a:{K:1,H:1,C:1,O:3},cls:"salt",fact:"A textbook bicarbonate salt — validated stoichiometry."},
+  {name:"Ammonium bicarbonate",f:"NH₄HCO₃",a:{N:1,H:5,C:1,O:3},cls:"salt",fact:"A textbook bicarbonate salt — validated stoichiometry."},
+  {name:"Calcium bicarbonate",f:"Ca(HCO₃)₂",a:{Ca:1,H:2,C:2,O:6},cls:"salt",fact:"A textbook bicarbonate salt — validated stoichiometry."},
+  {name:"Sodium chlorate",f:"NaClO₃",a:{Na:1,Cl:1,O:3},cls:"salt",fact:"A textbook chlorate salt — validated stoichiometry."},
+  {name:"Potassium chlorate",f:"KClO₃",a:{K:1,Cl:1,O:3},cls:"salt",fact:"A textbook chlorate salt — validated stoichiometry."},
+  {name:"Barium chlorate",f:"Ba(ClO₃)₂",a:{Ba:1,Cl:2,O:6},cls:"salt",fact:"A textbook chlorate salt — validated stoichiometry."},
+  {name:"Sodium perchlorate",f:"NaClO₄",a:{Na:1,Cl:1,O:4},cls:"salt",fact:"A textbook perchlorate salt — validated stoichiometry."},
+  {name:"Potassium perchlorate",f:"KClO₄",a:{K:1,Cl:1,O:4},cls:"salt",fact:"A textbook perchlorate salt — validated stoichiometry."},
+  {name:"Ammonium perchlorate",f:"NH₄ClO₄",a:{N:1,H:4,Cl:1,O:4},cls:"salt",fact:"A textbook perchlorate salt — validated stoichiometry."},
+  {name:"Magnesium perchlorate",f:"Mg(ClO₄)₂",a:{Mg:1,Cl:2,O:8},cls:"salt",fact:"A textbook perchlorate salt — validated stoichiometry."},
+  {name:"Sodium permanganate",f:"NaMnO₄",a:{Na:1,Mn:1,O:4},cls:"salt",fact:"A textbook permanganate salt — validated stoichiometry."},
+  {name:"Potassium permanganate",f:"KMnO₄",a:{K:1,Mn:1,O:4},cls:"salt",fact:"A textbook permanganate salt — validated stoichiometry."},
+  {name:"Sodium chromate",f:"Na₂CrO₄",a:{Na:2,Cr:1,O:4},cls:"salt",fact:"A textbook chromate salt — validated stoichiometry."},
+  {name:"Potassium chromate",f:"K₂CrO₄",a:{K:2,Cr:1,O:4},cls:"salt",fact:"A textbook chromate salt — validated stoichiometry."},
+  {name:"Barium chromate",f:"BaCrO₄",a:{Ba:1,Cr:1,O:4},cls:"salt",fact:"A textbook chromate salt — validated stoichiometry."},
+  {name:"Silver chromate",f:"Ag₂CrO₄",a:{Ag:2,Cr:1,O:4},cls:"salt",fact:"A textbook chromate salt — validated stoichiometry."},
+  {name:"Sodium dichromate",f:"Na₂Cr₂O₇",a:{Na:2,Cr:2,O:7},cls:"salt",fact:"A textbook dichromate salt — validated stoichiometry."},
+  {name:"Potassium dichromate",f:"K₂Cr₂O₇",a:{K:2,Cr:2,O:7},cls:"salt",fact:"A textbook dichromate salt — validated stoichiometry."},
+  {name:"Ammonium dichromate",f:"(NH₄)₂Cr₂O₇",a:{N:2,H:8,Cr:2,O:7},cls:"salt",fact:"A textbook dichromate salt — validated stoichiometry."},
+  {name:"Sodium cyanide",f:"NaCN",a:{Na:1,C:1,N:1},cls:"salt",fact:"A textbook cyanide salt — validated stoichiometry."},
+  {name:"Potassium cyanide",f:"KCN",a:{K:1,C:1,N:1},cls:"salt",fact:"A textbook cyanide salt — validated stoichiometry."},
+  {name:"Sodium hydrogen sulfate",f:"NaHSO₄",a:{Na:1,H:1,S:1,O:4},cls:"salt",fact:"A textbook hydrogen sulfate salt — validated stoichiometry."},
+  {name:"Potassium hydrogen sulfate",f:"KHSO₄",a:{K:1,H:1,S:1,O:4},cls:"salt",fact:"A textbook hydrogen sulfate salt — validated stoichiometry."},];
+</script>
+<script>
+/* ============================================================
+   PERIODIC SCRABBLE — Version 1 game logic
+============================================================ */
+const SUBS = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"};
+function subscript(n){ return String(n).split("").map(d=>SUBS[d]).join(""); }
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+/* Hill-system formula string from an atom-count object */
+function formulaize(atoms){
+  const order = k => k==="C"?0 : k==="H"?1 : 2;
+  const keys = Object.keys(atoms).sort((a,b)=>{
+    const oa=order(a), ob=order(b);
+    if(oa!==ob) return oa-ob;
+    return a.localeCompare(b);
+  });
+  return keys.map(k => atoms[k]>1 ? `${k}${subscript(atoms[k])}` : k).join("");
+}
+/* Plain (no-subscript) Hill formula for PubChem queries + cache keys */
+function hillPlain(atoms){
+  const order = k => k==="C"?0 : k==="H"?1 : 2;
+  const keys = Object.keys(atoms).sort((a,b)=>{
+    const oa=order(a), ob=order(b);
+    if(oa!==ob) return oa-ob;
+    return a.localeCompare(b);
+  });
+  return keys.map(k => atoms[k]>1 ? `${k}${atoms[k]}` : k).join("");
+}
+function atomsKey(atoms){
+  return Object.keys(atoms).sort().map(k=>`${k}${atoms[k]}`).join("");
+}
+
+/* Build the registry index now that helpers exist */
+const REG_BY_KEY = {};
+REGISTRY.forEach(m => { if(!REG_BY_KEY[atomsKey(m.a)]) REG_BY_KEY[atomsKey(m.a)] = m; });
+
+/* molar mass from atom counts */
+function molarMass(atoms){
+  let mm=0;
+  for(const [s,n] of Object.entries(atoms)){ mm += (ELEMENT_BY_SYM[s]?.m||0)*n; }
+  return mm;
+}
+
+/* ============================================================
+   STOCK: free play vs. seeded Daily Lab
+============================================================ */
+function baseStocks(){ return Object.fromEntries(ELEMENTS.map(e=>[e.s,e.stock])); }
+/* deterministic PRNG so everyone gets the same Daily lab */
+function mulberry32(seed){ return function(){ let t=seed+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+function dailySeed(){ const d=new Date(); return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate(); }
+function dailyStocks(){
+  const rnd = mulberry32(dailySeed());
+  const s = baseStocks();
+  // gently perturb each stock ±40% so the daily lab feels distinct but fair/solvable
+  for(const k of Object.keys(s)){
+    const base=s[k];
+    const f = 0.6 + rnd()*0.8;
+    s[k] = Math.max(1, Math.round(base*f));
+  }
+  return s;
+}
+
+/* ============================================================
+   GAME STATE
+============================================================ */
+const state = {
+  mode: "free",
+  stocks: baseStocks(),
+  vessel: [],
+  score: 0,
+  syntheses: [],
+  shelf: [],            // {f, name, cls, key, count}
+  bestMolecule: null,
+  runVerified: true,    // stays true only if every check was online/registry (never offline-guessed)
+  apiFinds: 0,
+  repeatCounts: {},     // formulaKey -> times made this run
+};
+function bestKey(){ return "ps2_best_"+state.mode; }
+state.bestRunScore = parseInt(localStorage.getItem(bestKey())||"0",10);
+
+/* PubChem answer cache (Layer 2), persisted */
+const CACHE_KEY = "ps2_pubchem_cache";
+let pubchemCache = {};
+try { pubchemCache = JSON.parse(localStorage.getItem(CACHE_KEY)||"{}"); } catch(e){ pubchemCache = {}; }
+function cacheGet(hill){ return Object.prototype.hasOwnProperty.call(pubchemCache,hill) ? pubchemCache[hill] : undefined; }
+function cacheSet(hill,val){ pubchemCache[hill]=val; try{ localStorage.setItem(CACHE_KEY, JSON.stringify(pubchemCache)); }catch(e){} }
+
+/* Compendium: compounds ever discovered on this device */
+const COMPENDIUM_KEY = "ps2_compendium";
+let compendium = {};
+try { compendium = JSON.parse(localStorage.getItem(COMPENDIUM_KEY)||"{}"); } catch(e){ compendium = {}; }
+function compendiumHas(key){ return !!compendium[key]; }
+function compendiumAdd(key){ if(!compendium[key]){ compendium[key]=1; try{ localStorage.setItem(COMPENDIUM_KEY, JSON.stringify(compendium)); }catch(e){} return true; } return false; }
+
+/* ============================================================
+   RENDER
+============================================================ */
+function available(sym){ return state.stocks[sym] - countInVessel(sym); }
+function countInVessel(sym){ return state.vessel.filter(s=>s===sym).length; }
+
+function renderTable(){
+  const cols=18, rows=10;
+  const grid=Array(rows*cols).fill(null);
+  ELEMENTS.forEach(e=>{ grid[(e.r-1)*cols+(e.c-1)]=e; });
+  document.getElementById("ptable").innerHTML = grid.map(cell=>{
+    if(!cell) return '<div class="empty"></div>';
+    const avail=available(cell.s), used=countInVessel(cell.s), depleted=avail<=0;
+    return `<div class="cell g-${cell.g} ${depleted?"depleted":""}" id="el-${cell.s}" title="${cell.name} — weight ×${cell.w}, molar mass ${cell.m}" onclick="addAtom('${cell.s}')">
+      <span class="num">${cell.n}</span><span class="sym">${cell.s}</span>
+      <span class="stk">${avail}${used?`<span style="color:var(--swiss)">·${used}</span>`:""}</span></div>`;
+  }).join("");
+}
+function refreshStocks(){
+  ELEMENTS.forEach(e=>{
+    const tile=document.getElementById("el-"+e.s); if(!tile) return;
+    const avail=available(e.s), used=countInVessel(e.s);
+    const stk=tile.querySelector(".stk");
+    if(stk) stk.innerHTML=`${avail}${used?`<span style="color:var(--swiss)">·${used}</span>`:""}`;
+    tile.classList.toggle("depleted", avail<=0);
+  });
+}
+function renderVessel(){
+  const v=document.getElementById("vessel");
+  if(state.vessel.length===0){
+    v.innerHTML=`<div class="vessel-empty">Tap elements above to start a synthesis…</div>`;
+    document.getElementById("tally").textContent="empty";
+    return;
+  }
+  v.innerHTML=state.vessel.map((s,i)=>`<span class="atom" onclick="removeAtom(${i})" title="Remove ${s}">${s}</span>`).join("");
+  document.getElementById("tally").textContent=formulaize(countAtoms(state.vessel));
+}
+function renderShelf(){
+  const el=document.getElementById("shelf");
+  document.getElementById("shelfTally").textContent = state.shelf.length ? `${state.shelf.reduce((a,b)=>a+b.count,0)} stones` : "";
+  if(state.shelf.length===0){ el.innerHTML=`<div class="shelf-empty">Synthesized compounds appear here as collectible stones.</div>`; return; }
+  el.innerHTML=state.shelf.map(st=>`<div class="stone cls-${st.cls}" title="${escapeHtml(st.name)}">
+    ${st.count>1?`<span class="stc">×${st.count}</span>`:""}
+    <div class="stf">${st.f}</div><div class="stn">${escapeHtml(st.name)}</div></div>`).join("");
+  if(typeof renderHeatUI==="function") renderHeatUI();
+}
+function renderStats(){
+  document.getElementById("sScore").textContent=state.score;
+  document.getElementById("sCount").textContent=state.syntheses.length;
+  document.getElementById("sBest").textContent=state.bestMolecule?state.bestMolecule.name:"—";
+  document.getElementById("sRemaining").textContent=Object.values(state.stocks).reduce((a,b)=>a+b,0);
+  const apiEl=document.getElementById("sApi"); if(apiEl) apiEl.textContent=state.apiFinds;
+  document.getElementById("hScore").textContent=state.score;
+  document.getElementById("hCount").textContent=state.syntheses.length;
+  document.getElementById("hBest").textContent=state.bestRunScore;
+  document.getElementById("runBadge").textContent = state.runVerified ? "🌐" : "📦";
+  const cl=document.getElementById("compendiumLine");
+  if(cl) cl.textContent = `Compendium: ${Object.keys(compendium).length} compounds discovered on this device.`;
+}
+function renderDiscoveries(){
+  document.getElementById("dCount").textContent=`(${state.syntheses.length})`;
+  const d=document.getElementById("discoveries");
+  if(state.syntheses.length===0){ d.innerHTML=`<div style="color:var(--ink-3);font-size:0.78rem;">No syntheses yet. Try water (H+H+O).</div>`; return; }
+  d.innerHTML=state.syntheses.slice().reverse().map(s=>`<div class="discovery">
+    <span><span class="nm">${s.first?"⭐ ":""}${escapeHtml(s.name)}</span> <small style="color:var(--ink-3)">${s.f}</small></span>
+    <span class="pt">+${s.points}</span></div>`).join("");
+}
+function renderAll(){ renderTable(); renderVessel(); renderShelf(); renderStats(); renderDiscoveries(); renderLeaderboard(); }
+
+/* ============================================================
+   VESSEL ACTIONS
+============================================================ */
+function addAtom(sym){
+  if(available(sym)<=0) return;
+  state.vessel.push(sym);
+  const tile=document.getElementById("el-"+sym);
+  if(tile){ tile.classList.remove("pulse"); void tile.offsetWidth; tile.classList.add("pulse"); }
+  refreshStocks(); renderVessel();
+}
+function removeAtom(idx){ state.vessel.splice(idx,1); refreshStocks(); renderVessel(); }
+function clearVessel(){ state.vessel=[]; refreshStocks(); renderVessel(); }
+function countAtoms(arr){ const c={}; arr.forEach(s=>c[s]=(c[s]||0)+1); return c; }
+
+/* ============================================================
+   SCORING (deterministic — same formula → same points everywhere)
+============================================================ */
+function computeScore(atoms, opts){
+  opts=opts||{};
+  let base=0, maxW=0;
+  for(const [sym,count] of Object.entries(atoms)){
+    const w=ELEMENT_BY_SYM[sym].w; base+=w*count; if(w>maxW) maxW=w;
+  }
+  const unique=Object.keys(atoms).length;
+  const complexity=1+0.30*(unique-1);
+  let rarity=1.0;
+  if(maxW>=12) rarity=2.5; else if(maxW>=8) rarity=2.0; else if(maxW>=6) rarity=1.5; else if(maxW>=4) rarity=1.25;
+  let lastOfKind=1;
+  for(const [sym,count] of Object.entries(atoms)){ if(state.stocks[sym]===count){ lastOfKind=2; break; } }
+  const apiBonus = opts.beyondRegistry ? 1.25 : 1.0;
+  // repeat decay based on how many times this formula already made this run
+  const key=hillPlain(atoms);
+  const made=state.repeatCounts[key]||0;
+  const decay = made===0 ? 1 : (made===1 ? 0.5 : 0.25);
+  const points=Math.max(1, Math.round(base*complexity*rarity*lastOfKind*apiBonus*decay));
+  return { base, complexity, rarity, lastOfKind, apiBonus, decay, made, points };
+}
+
+/* ============================================================
+   SYNTHESIS: registry → cache → live PubChem → offline verdict
+============================================================ */
+let synthBusy=false;
+let runId=0;   // bumped on every new lab; lets async flows abort if the run was reset under them
+async function synthesize(){
+  if(synthBusy || state.vessel.length===0) return;
+  const atoms=countAtoms(state.vessel);
+  const totalAtoms=Object.values(atoms).reduce((a,b)=>a+b,0);
+
+  // Layer 1: local registry (checked first so single-atom element stones like Mg, Zn, C work)
+  const reg=REG_BY_KEY[atomsKey(atoms)];
+  if(reg){ handleSuccess({name:reg.name, f:reg.f, cls:reg.cls, fact:reg.fact}, atoms, {source:"registry"}); return; }
+  if(totalAtoms<2){ toastFail("A compound needs at least 2 atoms. (Only common metals, carbon and sulfur can be shelved as single-atom element stones.)", 0); return; }
+
+  const hill=hillPlain(atoms);
+
+  // Layer 2: cache
+  const cached=cacheGet(hill);
+  if(cached!==undefined){
+    if(cached && cached.name) handleSuccess({name:cached.name, f:formulaize(atoms), cls:classifyByAtoms(atoms), fact:beyondFact(cached)}, atoms, {source:"cache", beyondRegistry:true, mw:cached.mw});
+    else handleFailure(atoms, {online:true});
+    return;
+  }
+
+  // Layer 3: live PubChem (only if online)
+  if(!navigator.onLine){ handleFailure(atoms, {online:false}); return; }
+
+  setApiBusy(true); synthBusy=true;
+  try{
+    const res=await pubchemLookup(hill);
+    cacheSet(hill, res||false); // cache positive object OR false
+    if(res && res.name){
+      handleSuccess({name:res.name, f:formulaize(atoms), cls:classifyByAtoms(atoms), fact:beyondFact(res)}, atoms, {source:"pubchem", beyondRegistry:true, mw:res.mw});
+    } else {
+      handleFailure(atoms, {online:true});
+    }
+  }catch(err){
+    // network failure/timeout → treat as offline, gentle
+    handleFailure(atoms, {online:false});
+  }finally{
+    setApiBusy(false); synthBusy=false;
+  }
+}
+
+function beyondFact(res){
+  const bits=[];
+  bits.push("Verified live against PubChem — not in the built-in registry.");
+  return bits.join(" ");
+}
+
+/* PubChem PUG-REST: fastformula → Title + MolecularWeight + Charge.
+   Returns {name, mw, cid} for the first neutral, non-isotope hit, or null. */
+async function pubchemLookup(hill){
+  const url=`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/${encodeURIComponent(hill)}/property/Title,MolecularWeight,Charge/JSON?MaxRecords=8`;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(), 4500);
+  let r;
+  try{ r=await fetch(url,{signal:ctrl.signal}); } finally { clearTimeout(timer); }
+  if(r.status===404) return null;                 // 404 = genuinely unknown formula
+  if(!r.ok) throw new Error("PubChem HTTP "+r.status); // 5xx/429 etc. → treated as offline, never cached as "no"
+  const data=await r.json();
+  const props=data?.PropertyTable?.Properties||[];
+  const isotope=/\b(\d+[A-Z]|d\d|-\d{2,3}\b|deuter|tritium)/i;
+  for(const p of props){
+    const title=p.Title||"";
+    if(!title) continue;
+    if(p.Charge!==undefined && p.Charge!==0) continue;      // skip bare ions
+    if(isotope.test(title)) continue;                        // skip isotopologues
+    return { name:title, mw: p.MolecularWeight?parseFloat(p.MolecularWeight):null, cid:p.CID };
+  }
+  // fall back to first hit if all were filtered but something existed
+  if(props.length){ const p=props[0]; return { name:p.Title||"Unknown compound", mw:p.MolecularWeight?parseFloat(p.MolecularWeight):null, cid:p.CID }; }
+  return null;
+}
+
+/* lightweight compound-class guess for shelf colour of API/cache finds */
+function classifyByAtoms(atoms){
+  const el=Object.keys(atoms);
+  const has=s=>el.includes(s);
+  const metals=el.filter(s=>{ const g=ELEMENT_BY_SYM[s].g; return g==="alkali"||g==="alkaline"||g==="transition"||g==="post"||g==="lanthanide"||g==="actinide"; });
+  if(has("C")&&has("H")) return "organic";
+  if(el.length===1) return "element";
+  if(metals.length && (has("O")||has("Cl")||has("F")||has("Br")||has("I")||has("S"))) return "salt";
+  if(has("O")) return "oxide";
+  return "salt";
+}
+
+/* ============================================================
+   SUCCESS / FAILURE
+============================================================ */
+function pushShelf(f, name, cls, atoms){
+  const key = atoms ? hillPlain(atoms) : f;
+  const existing=state.shelf.find(s=>s.key===key);
+  if(existing) existing.count++;
+  else state.shelf.push({key, f, name, cls, atoms:atoms||{}, count:1});
+}
+function handleSuccess(match, atoms, opts){
+  opts=opts||{};
+  const bd=computeScore(atoms, {beyondRegistry:!!opts.beyondRegistry});
+  for(const [sym,count] of Object.entries(atoms)) state.stocks[sym]-=count;
+  const key=hillPlain(atoms);
+  state.repeatCounts[key]=(state.repeatCounts[key]||0)+1;
+  state.score+=bd.points;
+  if(opts.beyondRegistry) state.apiFinds++;
+  const first=compendiumAdd(atomsKey(atoms));
+  const rec={ name:match.name, f:match.f, points:bd.points, cls:match.cls, first };
+  state.syntheses.push(rec);
+  pushShelf(match.f, match.name, match.cls, atoms);
+  if(!state.bestMolecule || bd.points>state.bestMolecule.points) state.bestMolecule=rec;
+  if(state.score>state.bestRunScore){ state.bestRunScore=state.score; try{ localStorage.setItem(bestKey(),String(state.bestRunScore)); }catch(e){} }
+  state.vessel=[];
+  renderAll();
+  popSuccess(match, bd, Object.assign({atoms}, opts));
+  confetti(bd.points>=400?80:30);
+}
+function handleFailure(atoms, info){
+  info=info||{};
+  const penalty = info.online ? 25 : 10;
+  if(!info.online) state.runVerified=false;   // offline guess → run badge downgraded
+  state.score=Math.max(0,state.score-penalty);
+  renderStats();
+  popFailure(atoms, info, penalty);
+}
+
+/* ============================================================
+   MODALS
+============================================================ */
+function openOverlay(){ document.getElementById("overlay").classList.add("open"); }
+function closeOverlay(){ document.getElementById("overlay").classList.remove("open"); }
+function setApiBusy(on){
+  document.getElementById("apiStatus").classList.toggle("on",on);
+  document.getElementById("btnSynth").disabled=on;
+}
+function popSuccess(match, bd, opts){
+  opts=opts||{};
+  document.getElementById("modal").classList.remove("shake");
+  const mw = opts.mw ? opts.mw : (opts.atoms ? molarMass(opts.atoms) : null);
+  const flair = opts.beyondRegistry ? `<div class="flair">🔬 Beyond the Registry — verified live on PubChem (+25%)</div>` : "";
+  const firstFlair = (state.syntheses[state.syntheses.length-1]?.first) ? `<div class="flair">⭐ First discovery on this device!</div>` : "";
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">Synthesized!</div>
+    <h2>${escapeHtml(match.name)}</h2>
+    <div class="formula">${match.f}</div>
+    ${flair}${firstFlair}
+    <div class="fact">${escapeHtml(match.fact||"")}</div>
+    <div class="mw">Molar mass ≈ ${mw?mw.toFixed(2):"?"} g/mol · class: ${match.cls}</div>
+    <div class="points-display">+${bd.points} Points</div>
+    <div class="breakdown">base ${bd.base} × complexity ${bd.complexity.toFixed(2)} × rarity ${bd.rarity.toFixed(2)}${bd.lastOfKind>1?" × LastDrop ×2":""}${bd.apiBonus>1?" × PubChem ×1.25":""}${bd.decay<1?` × repeat ×${bd.decay}`:""}</div>
+    <button class="btn-primary" onclick="closeOverlay()">Continue</button>`;
+  openOverlay();
+}
+function countAtomsFromMatch(match){
+  // registry match may not carry atoms; recompute from last vessel is unsafe → use formula parse fallback
+  return match._atoms || {};
+}
+function popFailure(atoms, info, penalty){
+  document.getElementById("modal").classList.add("shake");
+  const msg = info.online
+    ? "Not known to PubChem's 119-million-compound database — this atom combination really doesn't correspond to a known compound."
+    : "Not in the offline registry — you may well be right! Reconnect to check all of PubChem before you lose points.";
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">${info.online?"No such compound":"Offline check"}</div>
+    <h2 class="fail">${formulaize(atoms)}</h2>
+    <div class="fact">${msg}</div>
+    <div class="points-display fail">−${penalty} Points</div><br>
+    <button class="btn-primary" onclick="closeOverlay()">Continue</button>`;
+  openOverlay();
+}
+function toastFail(msg, penalty){
+  document.getElementById("modal").classList.add("shake");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">Hmm</div><h2 class="fail">Try again</h2>
+    <div class="fact">${escapeHtml(msg)}</div>
+    ${penalty?`<div class="points-display fail">−${penalty} Points</div><br>`:""}
+    <button class="btn-primary" onclick="closeOverlay()">OK</button>`;
+  openOverlay();
+}
+
+/* ============================================================
+   HINT
+============================================================ */
+function hint(){
+  if(state.score<50){ toastFail("You need at least 50 points to buy a hint.",0); return; }
+  const candidates=REGISTRY.filter(m=>Object.entries(m.a).every(([sym,n])=>state.stocks[sym]>=n));
+  const novel=candidates.filter(m=>!state.syntheses.find(s=>s.name===m.name));
+  const pool=novel.length?novel:candidates;
+  if(pool.length===0){ toastFail("No further registry syntheses possible — try an exotic formula for PubChem, or end your run!",0); return; }
+  pool.sort((a,b)=>Object.keys(b.a).length-Object.keys(a.a).length);
+  const choice=pool[Math.floor(Math.random()*Math.min(pool.length,10))];
+  state.score=Math.max(0,state.score-50); renderStats();
+  Object.keys(choice.a).forEach(sym=>{ const t=document.getElementById("el-"+sym); if(t){ t.classList.add("hint"); setTimeout(()=>t.classList.remove("hint"),3500); }});
+  document.getElementById("modal").classList.remove("shake");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">Hint</div><h2>Try synthesizing…</h2>
+    <div class="formula">${choice.f}</div>
+    <div class="fact"><b>${escapeHtml(choice.name)}</b> — needs ${formulaize(choice.a)}.</div>
+    <div class="points-display fail">−50 Points</div><br>
+    <button class="btn-primary" onclick="closeOverlay()">Got it</button>`;
+  openOverlay();
+}
+
+/* ============================================================
+   MODES
+============================================================ */
+function setMode(mode){
+  if(synthBusy) return;   // don't switch labs mid-cascade
+  if(mode===state.mode) return;
+  if(state.syntheses.length>0 && !confirm("Switch mode and start a fresh lab? Current run is not saved unless you End Run first.")) return;
+  state.mode=mode;
+  document.getElementById("modeFree").classList.toggle("active",mode==="free");
+  document.getElementById("modeDaily").classList.toggle("active",mode==="daily");
+  document.getElementById("modeNote").textContent = mode==="daily"
+    ? `Daily Lab — everyone worldwide plays this exact stock today (${new Date().toISOString().slice(0,10)}).`
+    : "Free Play — full stockroom, play at your own pace.";
+  document.getElementById("lbTabFree").classList.toggle("active",mode==="free");
+  document.getElementById("lbTabDaily").classList.toggle("active",mode==="daily");
+  lbTab=mode;
+  state.bestRunScore=parseInt(localStorage.getItem(bestKey())||"0",10);
+  newGame(false);
+  renderLeaderboard();
+}
+
+/* ============================================================
+   LEADERBOARD (local, per-mode, fairness badge)
+============================================================ */
+let lbTab="free";
+function lbKey(tab){ return "ps2_lb_"+tab; }
+function setLbTab(tab){
+  lbTab=tab;
+  document.getElementById("lbTabFree").classList.toggle("active",tab==="free");
+  document.getElementById("lbTabDaily").classList.toggle("active",tab==="daily");
+  renderLeaderboard();
+}
+function renderLeaderboard(){
+  let lb=[]; try{ lb=JSON.parse(localStorage.getItem(lbKey(lbTab))||"[]"); }catch(e){}
+  const el=document.getElementById("leaderboard");
+  const daily=lbTab==="daily";
+  const today=new Date().toISOString().slice(0,10);
+  const rows = daily ? lb.filter(e=>e.date===today) : lb;
+  if(rows.length===0){ el.innerHTML=`<div style="color:var(--ink-3);font-size:0.78rem;">${daily?"No Daily scores yet today. Play the Daily Lab!":"No scores yet. Finish a run!"}</div>`; return; }
+  el.innerHTML=rows.slice(0,10).map((e,i)=>`<div class="lb-row">
+    <div class="lb-rank">${i+1}</div>
+    <div class="lb-name">${e.verified?"🌐":"📦"} ${escapeHtml(e.name)} <small>${e.date} · ${e.syntheses} synth · best: ${escapeHtml(e.best||"—")}</small></div>
+    <div class="lb-score">${e.score.toLocaleString()}</div></div>`).join("");
+}
+function saveLeaderboard(name){
+  if(!name) name="Anonymous";
+  try{ localStorage.setItem("ps2_lastName",name); }catch(e){}
+  let lb=[]; try{ lb=JSON.parse(localStorage.getItem(lbKey(state.mode))||"[]"); }catch(e){}
+  lb.push({ name:name.slice(0,24), score:state.score, syntheses:state.syntheses.length,
+    best:state.bestMolecule?state.bestMolecule.name:"—", date:new Date().toISOString().slice(0,10),
+    verified:state.runVerified });
+  lb.sort((a,b)=>b.score-a.score);
+  try{ localStorage.setItem(lbKey(state.mode), JSON.stringify(lb.slice(0,50))); }catch(e){}
+  setLbTab(state.mode);
+}
+function clearLeaderboard(){
+  if(!confirm("Clear the "+lbTab+" leaderboard?")) return;
+  localStorage.removeItem(lbKey(lbTab)); renderLeaderboard();
+}
+
+/* ============================================================
+   END RUN / NEW GAME
+============================================================ */
+function endRun(){
+  if(synthBusy) return;   // don't interrupt a running cascade / API check
+  if(state.syntheses.length===0 && state.score===0){ toastFail("Nothing synthesized yet — make at least one compound first!",0); return; }
+  const def=localStorage.getItem("ps2_lastName")||"";
+  document.getElementById("modal").classList.remove("shake");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">End of run · ${state.mode==="daily"?"Daily Lab":"Free Play"} ${state.runVerified?"🌐":"📦"}</div>
+    <h2>Save your score</h2>
+    <div class="formula">${state.score.toLocaleString()} pts</div>
+    <div class="fact">${state.syntheses.length} syntheses · Best: ${state.bestMolecule?escapeHtml(state.bestMolecule.name):"—"} · ${state.apiFinds} beyond-registry finds</div>
+    <input id="nameInput" placeholder="Your name" value="${escapeHtml(def)}" maxlength="24" /><br>
+    <button class="btn-primary" onclick="confirmSave()">Submit & start new lab</button>
+    <button class="btn-secondary" onclick="closeOverlay()">Cancel</button>`;
+  openOverlay();
+  setTimeout(()=>{ const i=document.getElementById("nameInput"); if(i) i.focus(); },50);
+}
+function confirmSave(){ const name=(document.getElementById("nameInput").value||"").trim(); saveLeaderboard(name); newGame(false); closeOverlay(); }
+function newGame(confirmFirst){
+  if(synthBusy) return;   // don't reset the lab while a cascade / API check is running
+  if(confirmFirst && state.syntheses.length>0 && !confirm("Start a fresh lab? Current score is not saved unless you End Run first.")) return;
+  runId++;
+  state.stocks = state.mode==="daily" ? dailyStocks() : baseStocks();
+  if(state.sandbox){ for(const e of ELEMENTS) state.stocks[e.s]=999; }
+  state.vessel=[]; state.score=0; state.syntheses=[]; state.shelf=[]; state.bestMolecule=null;
+  state.runVerified=true; state.apiFinds=0; state.repeatCounts={};
+  if(typeof resetHeat==="function") resetHeat();
+  renderAll(); closeOverlay();
+}
+
+/* ============================================================
+   CONFETTI
+============================================================ */
+function confetti(count){
+  const wrap=document.createElement("div"); wrap.className="confetti";
+  const colors=["#d52b1e","#ffffff","#b98718","#2e7d4f","#1f6f8b","#8b5e3c"];
+  for(let i=0;i<count;i++){
+    const c=document.createElement("i");
+    c.style.left=(Math.random()*100)+"vw";
+    c.style.background=colors[i%colors.length];
+    c.style.animationDuration=(1.4+Math.random()*1.8)+"s";
+    c.style.animationDelay=(Math.random()*0.4)+"s";
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(c);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(),3800);
+}
+
+/* ============================================================
+   OFFLINE INDICATOR
+============================================================ */
+function updateOnline(){
+  const chip=document.getElementById("offlineChip");
+  chip.classList.toggle("on", !navigator.onLine);
+}
+window.addEventListener("online",updateOnline);
+window.addEventListener("offline",updateOnline);
+
+/* ============================================================
+   WELCOME + BOOT
+============================================================ */
+function popWelcome(){
+  document.getElementById("modal").classList.remove("shake");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">Welcome — SCS 125 Years</div>
+    <h2 style="color:var(--wood)">Periodic Scrabble: Heat It Up!</h2>
+    <div class="fact" style="text-align:left;">
+      <b>1.</b> Tap atoms, press <b>⚡ Synthesize</b>. Real compounds (registry or <b>PubChem live</b>) become <b>stones</b> on your shelf.<br>
+      <b>2.</b> Collect <b>all</b> of a reaction's reactants in the right amounts — e.g. one <b>CH₄</b> stone + <b>two O₂</b> stones (3 stones total). The line under the 🔥 button shows exactly what is still missing.<br>
+      <b>3.</b> Press <b>🔥 Heat It Up!</b> — the engine fires a real balanced reaction (CH₄ + 2 O₂ → CO₂ + 2 H₂O) and pays a big bonus.<br>
+      <b>4.</b> Products can react again — chase <span style="color:var(--swiss);font-weight:700;">cascade combos</span>.<br>
+      <b>5.</b> <b>🎓 Challenge Cards</b> map to your textbook; <b>Sandbox</b> is for classroom demos.<br><br>
+      <i>Tutorial goal: make CH₄, make O₂ twice, then Heat It Up.</i>
+    </div>
+    <button class="btn-primary" onclick="closeOverlay()">Start playing</button>`;
+  openOverlay();
+}
+updateOnline();
+renderAll();
+try{ if(!localStorage.getItem("ps2_welcomed")){ localStorage.setItem("ps2_welcomed","1"); popWelcome(); } }catch(e){ popWelcome(); }
+document.addEventListener("keydown",(e)=>{
+  const open=document.getElementById("overlay").classList.contains("open");
+  if(e.key==="Enter"){
+    if(open){ const b=document.querySelector("#modalBody .btn-primary"); if(b){ e.preventDefault(); b.click(); } }
+    else synthesize();
+  }
+  else if(e.key==="Escape"){ if(open) closeOverlay(); else clearVessel(); }
+});
+document.getElementById("overlay").addEventListener("click",(e)=>{ if(e.target===e.currentTarget) closeOverlay(); });
+</script>
+<script>
+/* ============================================================
+   PERIODIC SCRABBLE — Version 2 REACTION ENGINE ("Heat It Up!")
+   Compound existence = registry/PubChem (online, unlimited).
+   Reaction correctness = curated + rule-based (offline, auditable).
+============================================================ */
+
+/* ---- formula parser (handles parentheses & hydrates ignored) ---- */
+function parseFormula(str){
+  str=str.replace(/·.*$/,"").replace(/[₀-₉]/g,d=>"₀₁₂₃₄₅₆₇₈₉".indexOf(d));
+  let i=0;
+  function parseGroup(){
+    const counts={};
+    while(i<str.length){
+      const ch=str[i];
+      if(ch==="("){ i++; const sub=parseGroup(); let num=readNum(); for(const k in sub) counts[k]=(counts[k]||0)+sub[k]*num; }
+      else if(ch===")"){ i++; return counts; }
+      else if(/[A-Z]/.test(ch)){
+        let el=ch; i++;
+        while(i<str.length && /[a-z]/.test(str[i])){ el+=str[i]; i++; }
+        const num=readNum();
+        counts[el]=(counts[el]||0)+num;
+      } else { i++; }
+    }
+    return counts;
+  }
+  function readNum(){ let n=""; while(i<str.length && /[0-9]/.test(str[i])){ n+=str[i]; i++; } return n?parseInt(n,10):1; }
+  return parseGroup();
+}
+/* pretty display formula from plain string */
+function prettyFormula(str){
+  return str.replace(/([A-Za-z\)\]])(\d+)/g,(m,a,d)=>a+String(d).split("").map(x=>"₀₁₂₃₄₅₆₇₈₉"[+x]).join(""));
+}
+
+/* ---- reaction spec parser: "2 H2 + O2" -> [{key,atoms,coeff,disp}] ---- */
+function parseSide(side){
+  return side.split("+").map(tok=>{
+    tok=tok.trim();
+    const m=tok.match(/^(\d+)?\s*(.+)$/);
+    const coeff=m[1]?parseInt(m[1],10):1;
+    const formula=m[2].trim();
+    const atoms=parseFormula(formula);
+    return { key:hillPlain(atoms), atoms, coeff, disp:prettyFormula(formula) };
+  });
+}
+function R(r,p,type,exo,fact){
+  const R_=parseSide(r), P_=parseSide(p);
+  return { r:R_, p:P_, type, exo:!!exo, fact,
+    eqn: R_.map(x=>(x.coeff>1?x.coeff+" ":"")+x.disp).join(" + ")+" → "+P_.map(x=>(x.coeff>1?x.coeff+" ":"")+x.disp).join(" + ") };
+}
+
+/* ============================================================
+   CURATED REACTION DATABASE (balanced, textbook, hand-checked)
+============================================================ */
+const REACTIONS = [
+  // --- Combustion (explicit classics; general balancer covers the rest) ---
+  R("2 H2 + O2","2 H2O","combustion",true,"The hydrogen fuel cell / rocket reaction — only water as exhaust."),
+  R("C + O2","CO2","combustion",true,"Burning pure carbon (charcoal) to carbon dioxide."),
+  R("2 C + O2","2 CO",  "combustion",true,"Incomplete combustion of carbon — makes toxic carbon monoxide."),
+  R("2 CO + O2","2 CO2","combustion",true,"Carbon monoxide finishing its burn — the catalytic-converter reaction."),
+  R("S + O2","SO2","combustion",true,"Burning sulfur — the first step of the sulfuric-acid contact process."),
+  R("S8 + 8 O2","8 SO2","combustion",true,"A full sulfur ring combusting to sulfur dioxide."),
+  R("P4 + 5 O2","2 P2O5","combustion",true,"White phosphorus bursting into dense white smoke."),
+  // --- Metal + oxygen / halogen / water ---
+  R("2 Mg + O2","2 MgO","synthesis",true,"The blinding white flame of burning magnesium ribbon."),
+  R("4 Al + 3 O2","2 Al2O3","synthesis",true,"Aluminium's invisible oxide skin that stops it corroding."),
+  R("2 Ca + O2","2 CaO","synthesis",true,"Calcium burning to quicklime."),
+  R("4 Fe + 3 O2","2 Fe2O3","synthesis",true,"Rusting — iron slowly returning to ore."),
+  R("2 Cu + O2","2 CuO","synthesis",true,"Copper blackening in a flame."),
+  R("2 Na + Cl2","2 NaCl","synthesis",true,"A violent flash — sodium and chlorine become harmless table salt."),
+  R("2 K + Cl2","2 KCl","synthesis",true,"Potassium meeting chlorine gas."),
+  R("2 Fe + 3 Cl2","2 FeCl3","synthesis",true,"Iron burning in chlorine to the brown(III) chloride."),
+  R("H2 + Cl2","2 HCl","synthesis",true,"Photochemical chain reaction — explosive in sunlight."),
+  R("2 Na + 2 H2O","2 NaOH + H2","redox",true,"Sodium skittering and fizzing across water, releasing hydrogen."),
+  R("Ca + 2 H2O","Ca(OH)2 + H2","redox",true,"Calcium bubbling gently in water to limewater."),
+  // --- Acid + base neutralization ---
+  R("HCl + NaOH","NaCl + H2O","neutralization",true,"The archetypal neutralization — acid + base → salt + water."),
+  R("HCl + KOH","KCl + H2O","neutralization",true,"Neutralization to potassium chloride."),
+  R("2 HCl + Ca(OH)2","CaCl2 + 2 H2O","neutralization",true,"Hydrochloric acid neutralized by slaked lime."),
+  R("2 HCl + Mg(OH)2","MgCl2 + 2 H2O","neutralization",true,"The antacid reaction — milk of magnesia soothing stomach acid."),
+  R("H2SO4 + 2 NaOH","Na2SO4 + 2 H2O","neutralization",true,"Sulfuric acid fully neutralized to Glauber's salt."),
+  R("HNO3 + NaOH","NaNO3 + H2O","neutralization",true,"Nitric acid neutralized to sodium nitrate."),
+  R("H2SO4 + 2 KOH","K2SO4 + 2 H2O","neutralization",true,"Sulfuric acid neutralized by potash lye."),
+  R("3 HCl + Al(OH)3","AlCl3 + 3 H2O","neutralization",true,"Aluminium hydroxide antacid dissolving in acid."),
+  // --- Acid + carbonate / metal (gas evolution) ---
+  R("2 HCl + CaCO3","CaCl2 + H2O + CO2","gas",false,"Vinegar fizzing on chalk — the classic CO₂ test."),
+  R("2 HCl + Na2CO3","2 NaCl + H2O + CO2","gas",false,"Washing soda fizzing in acid."),
+  R("HCl + NaHCO3","NaCl + H2O + CO2","gas",false,"Baking soda and acid — the volcano experiment."),
+  R("H2SO4 + CaCO3","CaSO4 + H2O + CO2","gas",false,"Limestone attacked by sulfuric acid (acid rain on marble)."),
+  R("2 HCl + Zn","ZnCl2 + H2","gas",true,"Zinc dissolving in acid, bubbling hydrogen — a classic gas prep."),
+  R("2 HCl + Mg","MgCl2 + H2","gas",true,"Magnesium fizzing vigorously in acid."),
+  R("2 HCl + Fe","FeCl2 + H2","gas",true,"Iron dissolving to the pale-green(II) chloride."),
+  R("H2SO4 + Zn","ZnSO4 + H2","gas",true,"Zinc and sulfuric acid — a hydrogen generator."),
+  // --- Precipitation (double displacement) ---
+  R("AgNO3 + NaCl","AgCl + NaNO3","precipitation",false,"A milky curd of silver chloride drops out instantly."),
+  R("AgNO3 + KCl","AgCl + KNO3","precipitation",false,"The silver-chloride test for chloride ions."),
+  R("2 AgNO3 + CaCl2","2 AgCl + Ca(NO3)2","precipitation",false,"Calcium chloride precipitating silver chloride."),
+  R("BaCl2 + Na2SO4","BaSO4 + 2 NaCl","precipitation",false,"Dense white barium sulfate — the 'barium meal' of X-rays."),
+  R("BaCl2 + H2SO4","BaSO4 + 2 HCl","precipitation",false,"The sulfate test — instant white barium sulfate."),
+  R("Pb(NO3)2 + 2 KI","PbI2 + 2 KNO3","precipitation",false,"The 'golden rain' of lead iodide crystals."),
+  R("CuSO4 + 2 NaOH","Cu(OH)2 + Na2SO4","precipitation",false,"A pale-blue gel of copper hydroxide."),
+  R("FeCl3 + 3 NaOH","Fe(OH)3 + 3 NaCl","precipitation",false,"A rusty-brown gelatinous iron(III) hydroxide."),
+  R("MgCl2 + 2 NaOH","Mg(OH)2 + 2 NaCl","precipitation",false,"White magnesium hydroxide — milk of magnesia forming."),
+  // --- Industrial / famous named processes ---
+  R("N2 + 3 H2","2 NH3","synthesis",true,"The Haber–Bosch process — fixing nitrogen that feeds billions."),
+  R("2 SO2 + O2","2 SO3","synthesis",true,"The contact process — the heart of sulfuric-acid manufacture."),
+  R("SO3 + H2O","H2SO4","synthesis",true,"Sulfur trioxide meeting water — the final step to sulfuric acid."),
+  R("CO2 + H2O","H2CO3","synthesis",false,"Dissolving CO₂ makes carbonic acid — the fizz and your blood buffer."),
+  R("CaO + H2O","Ca(OH)2","synthesis",true,"Slaking lime — quicklime hissing into slaked lime."),
+  R("N2 + O2","2 NO","synthesis",false,"Lightning and engines force nitrogen and oxygen together."),
+  R("2 NO + O2","2 NO2","synthesis",true,"Colourless NO browning into NO₂ in air."),
+  R("3 NO2 + H2O","2 HNO3 + NO","redox",false,"The last step of the Ostwald process making nitric acid."),
+  R("2 H2O2","2 H2O + O2","decomposition",true,"Hydrogen peroxide fizzing apart — catalase in a cut does this."),
+  R("CaCO3","CaO + CO2","decomposition",false,"Roasting limestone in a kiln to make quicklime and cement."),
+  R("2 KClO3","2 KCl + 3 O2","decomposition",true,"Heating potassium chlorate — a classic lab oxygen source."),
+  /* (Water electrolysis removed: it needs electricity, not heat — and paired with
+     2 H₂ + O₂ → 2 H₂O it formed an infinite score loop from two water stones.) */
+  R("2 NaHCO3","Na2CO3 + H2O + CO2","decomposition",false,"Baking soda rising a cake as it releases CO₂."),
+  R("2 NH3 + CO2","CH4N2O + H2O","synthesis",false,"The Bosch–Meiser process making urea fertilizer."),
+  R("Fe2O3 + 2 Al","2 Fe + Al2O3","redox",true,"The thermite reaction — molten iron for welding rails."),
+  R("CuO + H2","Cu + H2O","redox",true,"Hydrogen reducing black copper oxide back to bright copper."),
+  R("2 CuO + C","2 Cu + CO2","redox",true,"Carbon smelting copper from its ore."),
+  R("Zn + CuSO4","ZnSO4 + Cu","redox",true,"A zinc rod growing a copper beard — the displacement classic."),
+  R("Fe + CuSO4","FeSO4 + Cu","redox",true,"Iron displacing copper from solution."),
+  R("CH4 + 2 O2","CO2 + 2 H2O","combustion",true,"Burning natural gas — the tutorial reaction and your kitchen stove."),
+  R("C2H5OH + 3 O2","2 CO2 + 3 H2O","combustion",true,"Burning ethanol — the clean blue flame of a spirit lamp."),
+];
+const RXN = REACTIONS.filter(x=>x && x.r);
+
+/* ---- general combustion balancer for any C/H/O/N/S compound ---- */
+function combustionFor(atoms){
+  const c=atoms.C||0, h=atoms.H||0, o=atoms.O||0, n=atoms.N||0, s=atoms.S||0;
+  const others=Object.keys(atoms).filter(k=>!["C","H","O","N","S"].includes(k));
+  if(others.length) return null;           // only CHONS burn cleanly here
+  if(c===0 && h===0) return null;           // pure S/P/N handled by curated
+  // products per 1 fuel: CO2=c, H2O=h/2, SO2=s, N2=n/2 ; O2 = (2c + h/2 + 2s - o)/2
+  const o2 = (2*c + h/2 + 2*s - o)/2;
+  if(o2<=0) return null;                     // already oxidised / not combustible
+  // scale to integers
+  let m=1; while(m<=4){
+    const f=m, co2=c*m, h2o=(h/2)*m, so2=s*m, n2=(n/2)*m, ox=o2*m;
+    if([co2,h2o,so2,n2,ox].every(v=>Math.abs(v-Math.round(v))<1e-9)) {
+      const r=[{formula:atoms, coeff:f}, {formula:{O:2}, coeff:Math.round(ox)}];
+      const p=[];
+      if(co2>0) p.push({formula:{C:1,O:2}, coeff:Math.round(co2)});
+      if(h2o>0) p.push({formula:{H:2,O:1}, coeff:Math.round(h2o)});
+      if(so2>0) p.push({formula:{S:1,O:2}, coeff:Math.round(so2)});
+      if(n2>0)  p.push({formula:{N:2}, coeff:Math.round(n2)});
+      const rxn={ r:r.map(x=>({key:hillPlain(x.formula),atoms:x.formula,coeff:x.coeff,disp:formulaize(x.formula)})),
+               p:p.map(x=>({key:hillPlain(x.formula),atoms:x.formula,coeff:x.coeff,disp:formulaize(x.formula)})),
+               type:"combustion", exo:true, generated:true,
+               fact:"General combustion — every C/H fuel burns to CO₂ and water (plus N₂/SO₂ if present)." };
+      rxn.eqn = rxn.r.map(x=>(x.coeff>1?x.coeff+" ":"")+x.disp).join(" + ")+" → "+rxn.p.map(x=>(x.coeff>1?x.coeff+" ":"")+x.disp).join(" + ");
+      return rxn;
+    }
+    m++;
+  }
+  return null;
+}
+
+/* ============================================================
+   REACTION MATCHING
+============================================================ */
+function shelfCounts(){ const m={}; state.shelf.forEach(s=>{ m[s.key]=(m[s.key]||0)+s.count; }); return m; }
+function reactionSatisfied(rxn, counts){ return rxn.r.every(x => (counts[x.key]||0) >= x.coeff); }
+
+function findAllPossibleReactions(){
+  const counts=shelfCounts();
+  const found=[];
+  for(const rxn of RXN){ if(reactionSatisfied(rxn,counts)) found.push(rxn); }
+  // generated combustions for each combustible stone (needs O2 present)
+  for(const st of state.shelf){
+    if(!st.atoms || !(st.atoms.C||st.atoms.H)) continue;
+    const comb=combustionFor(st.atoms);
+    if(comb && reactionSatisfied(comb,counts)){
+      // avoid duplicating a curated combustion of the same fuel
+      const dup=found.some(f=>f.type==="combustion" && f.r.length===comb.r.length && f.r.every(rr=>comb.r.find(cc=>cc.key===rr.key && cc.coeff===rr.coeff)));
+      if(!dup) found.push(comb);
+    }
+  }
+  return found;
+}
+/* pick the "best" reaction: prefer higher product value, exothermic first */
+function pickReaction(list){
+  return list.map(rxn=>({rxn, val:reactionValue(rxn)}))
+             .sort((a,b)=> (b.rxn.exo-a.rxn.exo) || (b.val-a.val))[0]?.rxn;
+}
+function reactionValue(rxn){
+  let v=0;
+  for(const x of rxn.p){ let base=0; for(const [s,n] of Object.entries(x.atoms)){ base+=(ELEMENT_BY_SYM[s]?.w||1)*n; } v+=base*x.coeff; }
+  return v;
+}
+
+/* ============================================================
+   HEAT UP! — the reaction press with cascades
+============================================================ */
+let comboLevel=0;
+async function heatUp(){
+  if(synthBusy) return;
+  const possible=findAllPossibleReactions();
+  if(possible.length===0){ fizzle(); return; }
+  const myRun=runId;
+  synthBusy=true;
+  const btn=document.getElementById("btnHeat");
+  btn.disabled=true;
+  const fired=[]; let totalPoints=0;
+  try{
+    hazeFlash();
+    await sleep(900); // slow-burn anticipation
+    comboLevel=0;
+    const firedEqns=new Set();   // each distinct reaction fires at most once per press
+    let guard=0;                 // (prevents e.g. 2 H₂O → 2 H₂ + O₂ → 2 H₂O ping-pong farming)
+    while(guard++<12){
+      if(runId!==myRun) return;  // lab was reset while we were animating
+      const list=findAllPossibleReactions().filter(r=>!firedEqns.has(r.eqn));
+      if(list.length===0) break;
+      const rxn=pickReaction(list);
+      firedEqns.add(rxn.eqn);
+      const combo=1 + comboLevel*0.5;          // 1, 1.5, 2, 2.5 ...
+      const pts=applyReaction(rxn, combo);
+      totalPoints+=pts;
+      fired.push({rxn, pts, combo});
+      comboLevel++;
+      renderShelf(); renderStats();
+      await sleep(650);
+    }
+  } finally {
+    // ALWAYS restore the UI, even if a reaction step throws — a stuck disabled
+    // button here was the "missing buttons after Heat It Up" bug
+    synthBusy=false;
+    btn.disabled=false;
+  }
+  if(runId!==myRun) return;
+  renderAll();
+  popReaction(fired, totalPoints);
+  if(totalPoints>0) confetti(fired.length>1?90:45);
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function hazeFlash(){ const h=document.createElement("div"); h.className="heat-haze on"; document.body.appendChild(h); setTimeout(()=>h.remove(),1600); }
+
+function applyReaction(rxn, combo){
+  // consume reactants
+  for(const x of rxn.r) consumeStone(x.key, x.coeff);
+  // award points: sum product base × 2 × exo × combo
+  let base=0;
+  for(const x of rxn.p){ let b=0; for(const [s,n] of Object.entries(x.atoms)){ b+=(ELEMENT_BY_SYM[s]?.w||1)*n; } base+=b*x.coeff; }
+  const exo=rxn.exo?1.5:1.0;
+  const pts=Math.max(1, Math.round(base*2*exo*combo));
+  state.score+=pts;
+  if(state.score>state.bestRunScore){ state.bestRunScore=state.score; try{ localStorage.setItem(bestKey(),String(state.bestRunScore)); }catch(e){} }
+  // mint products onto shelf
+  for(const x of rxn.p){
+    for(let i=0;i<x.coeff;i++){
+      const reg=REG_BY_KEY[atomsKey(x.atoms)];
+      const name=reg?reg.name:prettyFormula(hillPlain(x.atoms));
+      const cls=reg?reg.cls:classifyByAtoms(x.atoms);
+      pushShelf(formulaize(x.atoms), name, cls, x.atoms);
+    }
+  }
+  // records
+  state.reactions=state.reactions||[];
+  state.reactions.push({eqn:rxn.eqn, type:rxn.type, pts});
+  markReactionType(rxn.type);
+  checkChallenges(rxn);
+  return pts;
+}
+function consumeStone(key, n){
+  for(let k=0;k<n;k++){
+    const st=state.shelf.find(s=>s.key===key && s.count>0);
+    if(!st) break;
+    st.count--;
+    if(st.count<=0) state.shelf=state.shelf.filter(s=>s!==st);
+  }
+}
+function fizzle(){
+  const near=nearestReactionHint(shelfCounts());
+  const hintTxt = near
+    ? `Closest reaction: ${readinessChips(near.parts)} — you need ${near.missing} more stone${near.missing>1?"s":""}.`
+    : "Gather a reaction's reactants — a shimmering 🔥 stone means it can react now.";
+  if(state.sandbox){
+    document.getElementById("modal").classList.add("shake");
+    document.getElementById("modalBody").innerHTML=`
+      <div class="name-tag">🔥 Fizzle</div><h2 class="fail">No reaction</h2>
+      <div class="fact">Nothing on the shelf reacts yet. ${hintTxt} (Sandbox: no penalty.)</div><br>
+      <button class="btn-primary" onclick="closeOverlay()">OK</button>`;
+    openOverlay(); return;
+  }
+  state.score=Math.max(0,state.score-10);
+  renderStats();
+  document.getElementById("modal").classList.add("shake");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">🔥 Fizzle</div><h2 class="fail">No reaction</h2>
+    <div class="fact">Nothing on the shelf reacts yet. ${hintTxt}</div>
+    <div class="points-display fail">−10 Points</div><br>
+    <button class="btn-primary" onclick="closeOverlay()">OK</button>`;
+  openOverlay();
+}
+
+/* ============================================================
+   REACTION RESULT MODAL
+============================================================ */
+function popReaction(fired, total){
+  document.getElementById("modal").classList.remove("shake");
+  const combo = fired.length>1 ? `<div class="combo-flag">⚡ ${fired.length}× CASCADE COMBO!</div>` : "";
+  const blocks=fired.map((f,i)=>{
+    const typ=f.rxn.type||"reaction";
+    const exo=f.rxn.exo?`<span class="rxn-type exo">exothermic</span>`:``;
+    return `<div style="margin-bottom:0.8rem;">
+      ${fired.length>1?`<div style="font-size:0.72rem;color:var(--ink-3);">Step ${i+1}${f.combo>1?` · combo ×${f.combo}`:""}</div>`:""}
+      <div class="equation">${f.rxn.eqn}</div>
+      <span class="rxn-type">${typ}</span>${exo}
+      <div class="fact" style="margin:0.2rem 0 0.3rem;">${escapeHtml(f.rxn.fact||"")}</div>
+      <div style="font-weight:800;color:var(--ok);">+${f.pts} points</div>
+    </div>`;
+  }).join("");
+  document.getElementById("modalBody").innerHTML=`
+    <div class="name-tag">Heated!</div>
+    ${combo}
+    ${blocks}
+    <div class="points-display">Total +${total} Points</div><br>
+    <button class="btn-primary" onclick="closeOverlay()">Continue</button>`;
+  openOverlay();
+}
+
+/* ============================================================
+   HEAT UI: button state + shimmer on reactable stones
+============================================================ */
+/* Find the reaction the player is closest to completing, for the readiness meter.
+   Returns {missing, have, parts:[{disp,have,need}]} or null if no stone matches any reaction. */
+function nearestReactionHint(counts){
+  const consider=[...RXN];
+  for(const st of state.shelf){
+    if(st.atoms && (st.atoms.C||st.atoms.H)){
+      const c=combustionFor(st.atoms);
+      if(c) consider.push(c);
+    }
+  }
+  let best=null;
+  for(const rxn of consider){
+    let have=0, missing=0; const parts=[];
+    for(const x of rxn.r){
+      const h=Math.min(counts[x.key]||0, x.coeff);
+      have+=h; missing+=x.coeff-h;
+      parts.push({disp:x.disp, have:counts[x.key]||0, need:x.coeff});
+    }
+    if(have===0 || missing===0) continue;   // no progress yet, or already ready
+    if(!best || missing<best.missing || (missing===best.missing && have>best.have))
+      best={missing, have, parts};
+  }
+  return best;
+}
+function readinessChips(parts){
+  return parts.map(p=>`<span class="${p.have>=p.need?"have-ok":"have-miss"}">${p.disp}&nbsp;${Math.min(p.have,p.need)}/${p.need}</span>`).join(" + ");
+}
+function renderHeatUI(){
+  const btn=document.getElementById("btnHeat"); if(!btn) return;
+  const possible=findAllPossibleReactions();
+  const ready=possible.length>0;
+  btn.classList.toggle("ready", ready);
+  const note=document.getElementById("heatNote");
+  if(note){
+    if(ready){
+      note.innerHTML=`<span class="have-ok">Reactants ready!</span> ${possible.length} reaction${possible.length>1?"s":""} possible — press <b>🔥 Heat It Up!</b>`;
+    } else {
+      const near=nearestReactionHint(shelfCounts());
+      if(near){
+        note.innerHTML=`Almost there: ${readinessChips(near.parts)} — synthesize ${near.missing} more stone${near.missing>1?"s":""} to unlock a reaction.`;
+      } else {
+        note.textContent="Synthesize reactant stones (e.g. 1× CH₄ + 2× O₂), then apply heat to trigger a real reaction.";
+      }
+    }
+  }
+  // shimmer stones that participate as reactants in some possible reaction
+  const reactantKeys=new Set();
+  possible.forEach(rxn=>rxn.r.forEach(x=>reactantKeys.add(x.key)));
+  document.querySelectorAll("#shelf .stone").forEach(el=>{
+    const key=el.getAttribute("data-key");
+    el.classList.toggle("reactable", reactantKeys.has(key));
+  });
+}
+function resetHeat(){ comboLevel=0; state.reactions=[]; resetChallenges(); }
+
+/* ============================================================
+   CHALLENGE CARDS (curriculum goals)
+============================================================ */
+const CHALLENGES=[
+  {id:"combustion",  goal:"Burn a fuel", desc:"Trigger any combustion reaction (e.g. CH₄ + O₂).", test:r=>r.type==="combustion"},
+  {id:"neutralization",goal:"Neutralize an acid", desc:"React an acid with a base to make a salt + water.", test:r=>r.type==="neutralization"},
+  {id:"precipitation",goal:"Make a precipitate", desc:"Run a double-displacement that drops out a solid (e.g. Ag⁺ + Cl⁻).", test:r=>r.type==="precipitation"},
+  {id:"gas",         goal:"Evolve a gas", desc:"React an acid with a carbonate or metal to release a gas.", test:r=>r.type==="gas"},
+  {id:"redox",       goal:"Run a redox reaction", desc:"Displace a metal or reduce an oxide (e.g. thermite).", test:r=>r.type==="redox"},
+  {id:"decomposition",goal:"Decompose a compound", desc:"Break one compound into two or more (e.g. 2 H₂O₂ → …).", test:r=>r.type==="decomposition"},
+  {id:"synthesis",   goal:"Combine into one product-family", desc:"Run a synthesis/combination reaction (e.g. Haber N₂ + H₂).", test:r=>r.type==="synthesis"},
+];
+let challengeDone={};
+function resetChallenges(){ challengeDone={}; renderChallenges(); }
+function checkChallenges(rxn){ CHALLENGES.forEach(c=>{ if(!challengeDone[c.id] && c.test(rxn)) challengeDone[c.id]=true; }); renderChallenges(); }
+function renderChallenges(){
+  const el=document.getElementById("challenges"); if(!el) return;
+  const done=Object.keys(challengeDone).length;
+  const cc=document.getElementById("chalCount"); if(cc) cc.textContent=`(${done}/${CHALLENGES.length})`;
+  el.innerHTML=CHALLENGES.map(c=>`<div class="chal ${challengeDone[c.id]?"done":""}">
+    <span class="badge">${challengeDone[c.id]?"✓":"○"}</span>
+    <div class="goal">${c.goal}</div><div class="desc">${c.desc}</div></div>`).join("");
+}
+
+/* ============================================================
+   REACTION COMPENDIUM (types discovered, persists across runs)
+============================================================ */
+const RXNC_KEY="ps2_rxn_compendium";
+let rxnCompendium={};
+try{ rxnCompendium=JSON.parse(localStorage.getItem(RXNC_KEY)||"{}"); }catch(e){ rxnCompendium={}; }
+function markReactionType(type){ if(type && !rxnCompendium[type]){ rxnCompendium[type]=1; try{localStorage.setItem(RXNC_KEY,JSON.stringify(rxnCompendium));}catch(e){} } renderRxnCompendium(); }
+function renderRxnCompendium(){
+  const el=document.getElementById("rxnCompendium"); if(!el) return;
+  const types=["combustion","synthesis","neutralization","precipitation","gas","redox","decomposition"];
+  const n=types.filter(t=>rxnCompendium[t]).length;
+  const cc=document.getElementById("rxnCompCount"); if(cc) cc.textContent=`(${n}/${types.length})`;
+  el.innerHTML=types.map(t=>`<div class="rxn-card"><span>${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+    <span class="${rxnCompendium[t]?"done":"todo"}">${rxnCompendium[t]?"✓ discovered":"—"}</span></div>`).join("");
+}
+
+/* ============================================================
+   SANDBOX MODE
+============================================================ */
+function toggleSandbox(){
+  if(synthBusy){ document.getElementById("sandboxToggle").checked=!!state.sandbox; return; }
+  state.sandbox=document.getElementById("sandboxToggle").checked;
+  if(state.sandbox){
+    // unlimited stock: set every element very high
+    for(const e of ELEMENTS) state.stocks[e.s]=999;
+    renderAll();
+  } else {
+    if(confirm("Leave sandbox and start a fresh scored lab?")) newGame(false);
+    else { state.sandbox=true; document.getElementById("sandboxToggle").checked=true; }
+  }
+}
+
+/* ============================================================
+   Add data-key to shelf stones so shimmer targeting works,
+   and hook product classes. Re-wrap renderShelf output.
+============================================================ */
+const _origRenderShelf = renderShelf;
+renderShelf = function(){
+  const el=document.getElementById("shelf");
+  document.getElementById("shelfTally").textContent = state.shelf.length ? `${state.shelf.reduce((a,b)=>a+b.count,0)} stones` : "";
+  if(state.shelf.length===0){ el.innerHTML=`<div class="shelf-empty">Synthesize compounds — they become reaction stones here.</div>`; renderHeatUI(); return; }
+  el.innerHTML=state.shelf.map(st=>`<div class="stone cls-${st.cls}" data-key="${st.key}" title="${escapeHtml(st.name)}">
+    ${st.count>1?`<span class="stc">×${st.count}</span>`:""}
+    <div class="stf">${st.f}</div><div class="stn">${escapeHtml(st.name)}</div></div>`).join("");
+  renderHeatUI();
+};
+
+/* ============================================================
+   INIT V2 panels (runs after boot's renderAll already fired)
+============================================================ */
+state.reactions=[];
+renderShelf();
+renderChallenges();
+renderRxnCompendium();
+renderHeatUI();
+</script>
+</body>
+</html>
